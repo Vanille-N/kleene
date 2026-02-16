@@ -1,0 +1,8 @@
+- ranges as [a-z] and [^\n]
+- patch and extend
+- filter before parsing to reduce size of dictionary
+- validation
+- ability to emit custom error messages
+- 'next' in the case of failed regex match
+- format error messages
+- show invisible characters (ok except newline in "can't match string")
