@@ -5,3 +5,4 @@
 - overall, all error messages should be more informative
 - on extend/patch,
   - delete unused rule
+- inverse of $$ as a non-functional notation

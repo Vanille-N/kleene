@@ -305,7 +305,15 @@
   ans
 }
 
+/// Positive lookahead: matches a pattern without consuming the input.
+/// Returns #typ.none.
+///
+/// See: @pat-peek.
+/// -> pattern
 #let peek(
+  /// Inner patterns that should match.
+  /// Auto-cast to a @cmd:prelude:seq.
+  /// -> pattern
   ..pats,
 ) = (subparse, stack, input) => {
   let ans = subparse(seq(array: false, ..pats), input)
@@ -316,7 +324,15 @@
   }
 }
 
+/// Negative lookahead: checks that a pattern does not match.
+/// Returns #typ.none and does not consume the input.
+///
+/// See: @pat-neg
+/// -> pattern
 #let neg(
+  /// Inner patterns that should not match.
+  /// Auto-cast to a @cmd:prelude:seq.
+  /// -> pattern
   ..pats,
 ) = (subparse, stack, input) => {
   let ans = subparse(seq(array: false, ..pats), input)

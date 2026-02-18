@@ -50,7 +50,7 @@
   let evaluate(ruleid, tt, expect: true, validate: auto) = {
     let incr = ()
     let (ok, ans) = parse(rules, label(ruleid), tt.text)
-    if ok {
+    if ok == expect {
       incr.push("ok")
     } else {
       incr.push("err")

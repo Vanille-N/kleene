@@ -3,6 +3,8 @@ typstc cmd file fmt="pdf":
 
 doc: (typstc "watch" "docs/docs.typ")
 
+test T: (typstc "watch" "tests/"+T+"/test.typ")
+
 scrybe:
   scrybe -R README.md typst.toml docs/docs.typ --version="$(cat .version)"
 
