@@ -2,10 +2,10 @@
 
 #let arith = {
   import kleene.prelude: *
-  grammar(
+  kleene.grammar(
     int: {
-      pat(iter(range("0", "9")))
-      tr(cs => int(cs.join("")))
+      pat(iter(`[0-9]`))
+      rw(cs => int(cs.join("")))
       yy(`5`)
       yy(`042`)
       yy(`400`)
@@ -17,22 +17,22 @@
     },
     hex: {
       pat("0x", $$, iter(<hexdigit>))
-      tr(cs => cs.flatten().join(""))
+      rw(cs => cs.flatten().join(""))
       yy(`0x42`, `0xF`)
     },
     identchar: {
-      pat(range("a", "z"))
-      pat(range("A", "Z"))
+      pat(`[a-z]`)
+      pat(`[A-Z]`)
       yy(`a`, `F`)
     },
     ident: {
       pat(iter(<identchar>))
-      tr(cs => cs.join(""))
+      rw(cs => cs.join(""))
       yy(`x`, `foo`)
     },
     comma: {
       pat(maybe(iter(" ")), ",", maybe(iter(" ")))
-      tr(s => none)
+      rw(s => none)
       yy(`,`, `  , `)
     },
     maybehex: {
@@ -47,7 +47,7 @@
     },
     list: {
       pat("[", iter(<value>, <comma>), maybe(<int>), "]")
-      tr(((_, vals,last, _),) => vals.map(((i,_),) => i) + last)
+      rw(((_, vals,last, _),) => vals.map(((i,_),) => i) + last)
       yy(
         `[1, 2, 3]`,
         `[42 , 54 ,    ]`,
