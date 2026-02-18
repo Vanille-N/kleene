@@ -14,9 +14,9 @@
       dangling-pats.push(elt.pat)
     } else if "rw" in elt {
       if dangling-pats == () {
-        panic("This instance of 'tr' does not apply to any patterns")
+        panic("This instance of 'rw' does not apply to any patterns")
       }
-      rule.pat.push((pat: ops.fork(..dangling-pats), rw: elt.rw))
+      rule.pat.push(ops.rewrite(elt.rw)(ops.fork(..dangling-pats)))
       dangling-pats = ()
     } else if "yy" in elt {
       rule.yy.push(elt)
@@ -27,7 +27,10 @@
     }
   }
   if dangling-pats != () {
-    rule.pat.push((pat: ops.fork(..dangling-pats), rw: auto))
+    rule.pat.push(ops.fork(..dangling-pats))
+  }
+  if rule.pat != () {
+    rule.pat = ops.fork(..rule.pat)
   }
   (""+id: rule)
 }

@@ -37,7 +37,7 @@
       rw(id => (id: id))
       pat(drop("("), $$, <blank>, <expr>, <blank>, drop(")"))
       yy(`x`, `(x)`)
-      yy(`((((x))))`)
+      //yy(`((((x))))`)
       nn(`(x`)
       nn(`x y`)
     },

@@ -1,3 +1,4 @@
+#import "stackframe.typ"
 #import "operators.typ" as ops
 
 // Automatically reinterprets builtin types/values to operators.
@@ -26,45 +27,25 @@
   }
 }
 
-#let subparse(rules, stack) = (id, input) => {
+#let _subparse(rules, stack) = (id, input) => {
   let stack = stack
   if type(id) == label {
     stack.push(id)
     let rule = rules.at(str(id))
-    let latest-msg = (ok: false, backtrack: true, stack: stack, msg: [Empty rule], next: none, rest: input)
-    let backtrack = true
-    for group in rule.pat {
-      let select = group.pat
-      let transform = group.rw
-      while type(select) != function {
-        select = auto-cast(select)
-      }
-      let ans = select(subparse(rules, stack), stack, input)
-      if not ans.backtrack { backtrack = false }
-      if ans.ok {
-        if "val" in ans {
-          if transform == none {
-            let _ = ans.remove("val")
-          } else if transform == auto {
-            // noop transform
-          } else if type(transform) == function {
-            ans.val = transform(ans.val)
-          } else {
-            panic("`rw` must be a function or none")
-          }
-        }
-        return (: ..ans, backtrack: backtrack)
-      } else if not backtrack {
-        return ans
-      } else {
-        latest-msg = ans
-      }
+    let select = rule.pat
+    while type(select) != function {
+      select = auto-cast(select)
     }
-    latest-msg
+    stackframe.tailcall(select, stackframe.args(_subparse(rules, stack), stack, input))
   } else {
-    auto-cast(id)(subparse(rules, stack), stack, input)
+    while type(id) != function {
+      id = auto-cast(id)
+    }
+    stackframe.tailcall(id, stackframe.args(_subparse(rules, stack), stack, input))
   }
 }
+
+#let subparse(..args) = stackframe.run(_subparse(..args))
 
 /// Initiate parsing.
 /// Returns a boolean and a result.

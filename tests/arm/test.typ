@@ -15,7 +15,7 @@
     rw(none)
   },
   comment: {
-    pat(<xspaces>, "//", $$, `[^\n]*`, fork("\n", eof()))
+    pat("//", $$, `[^\n]*`, fork("\n", eof()))
     rw(none)
     yy(
       ```// comment```,
@@ -39,11 +39,16 @@
     )
   },
   lb: {
-    pat(<xspaces>, fork(eof(), "\n"))
+    pat(iter(<xspaces>, fork(eof(), "\n")))
     rw(none)
+    yy(```
+               
+          
+           
+    ```)
   },
   linebreak: {
-    pat(iter(fork(<comment>, <lb>)))
+    pat(iter(<xspaces>, fork(<comment>, <lb>)))
     rw(none)
     yy(
       ```

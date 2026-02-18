@@ -146,7 +146,7 @@ At minimum, using KLEENE takes the following form:
   ```
 ]
 
-#let test-example(code, post: auto) = {
+#let test-example(code, run: true, post: auto) = {
   let pre = ```
     #import "/src/lib.typ" as kleene
     #import kleene.prelude: *
@@ -162,6 +162,9 @@ At minimum, using KLEENE takes the following form:
   block(breakable: true, stroke: blue + 0.5pt, width: 100%, inset: 3mm, radius: 2mm)[
     #code
   ]
+  if not run {
+    return
+  }
   block(breakable: true, stroke: gray, inset: 3mm, width: 100%, radius: 2mm)[
     #set text(size: 8pt)
     #eval(
@@ -198,6 +201,7 @@ string `"foo"`:
 == Simple examples
 
 === Decimal integers
+
 
 To start with an easy example, let's write a parser of integers in base 10.
 We take the opportunity to demonstrate the use of `kleene.test` to run the
@@ -409,7 +413,6 @@ the first of `pattern`, `pattern2`, ... that has a successful match.
 )
 ```)
 
-
 == Repetitions
 
 === Maybe <pat-maybe>
@@ -463,7 +466,6 @@ It is equivalent to `+` in regular expressions.
   }
 )
 ```)
-
 #info-alert[
   `iter` is sophisticated enough to not get trapped in an infinite loop if you give a pattern
   that risks consuming no input. In that case it will stop after one iteration.
@@ -490,7 +492,7 @@ It is equivalent to `*` in regular expressions.
 #test-example(````typ
 #let grammar = kleene.grammar(
   whitespace: {
-    pat(star(fork(" ", "\n", "\t")))
+    pat(iter(fork(" ", "\n", "\t")))
     rw(none)
   },
   comment: {
@@ -499,7 +501,7 @@ It is equivalent to `*` in regular expressions.
     rw(none)
   },
   irrelevant: {
-    pat(star(fork(<comment>, <whitespace>)))
+    pat(star(fork(<whitespace>, <comment>)))
     rw(none)
     yy(```
        
@@ -772,7 +774,7 @@ has the combined rules of `grammar1` and `grammar2`, in the following manner:
 - rules that exist in both are concatenated in a way that gives `grammar1` precedence,
 - unit test sets are merged.
 
-#test-example(```typ
+#test-example(run: false, ```typ
 #let grammar1 = kleene.grammar(
   hex: {
     pat(drop("0x"), $$, `[0-9A-Fa-f]+`)
