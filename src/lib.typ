@@ -2,7 +2,7 @@
 
 #import "ui.typ": test
 
-#import "builders.typ": grammar
+#import "grammar.typ": grammar, extend, patch
 
 #import "prelude.typ"
 

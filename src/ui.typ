@@ -1,78 +1,12 @@
-#let test(rules, select: auto, total: true) = {
-  import "parse.typ": parse
-  let outcomes = (ok: 0, err: 0)
-  let interpret(ok, expect: true) = {
-    if ok == expect {
-      "ok"
-    } else {
-      "err"
-    }
-  }
-  let status(ok, expect: true) = {
-    let color = if ok == expect {
-      green
-    } else {
-      red
-    }
-    rect(width: 5mm, height: 5mm, fill: color)
-  }
-  let evaluate(ruleid, tt, expect: true) = {
-    let (ok, ans) = parse(rules, label(ruleid), tt.text)
-    let arr = (
-      box(fill: gray.lighten(60%), inset: 3pt)[#text(fill: blue)[#tt]],
-      status(ok, expect: expect),
-      [#ans],
-    )
-    let incr = interpret(ok, expect: expect)
-    (incr, arr)
-  }
-  for (ruleid, rule) in rules {
-    if select != auto and ruleid not in select { continue }
-    if rule.yy != () {
-      table(columns: (2fr, auto, 5fr),
-        table.header(
-          [*#ruleid*], [],
-          text(fill: green)[*examples*],
-        ),
-        ..for tt in rule.yy {
-          let (incr, arr) = evaluate(ruleid, tt, expect: true)
-          outcomes.at(incr) += 1
-          arr
-        }
-      )
-    }
-    if rule.nn != () {
-      table(columns: (2fr, auto, 5fr),
-        table.header(
-          [*#ruleid*], [],
-          text(fill: red)[*counterexamples*],
-        ),
-        ..for tt in rule.nn {
-          let (incr, arr) = evaluate(ruleid, tt, expect: false)
-          outcomes.at(incr) += 1
-          arr
-        }
-      )
-    }
-  }
-  if total {
-    box(table(columns: 2,
-      [total], [#{outcomes.ok + outcomes.err}],
-      [#status(true)], [#{outcomes.ok}],
-      [#status(false)], [#{outcomes.err}]
-    ))
-  }
-}
-
-#let show-invisible(line, base-color: black, mode: "special") = {
+#let show-invisible(line, preserve-newlines: false, base-color: black, mode: "special") = {
   let dicts = (
     special: (
-      "\n": "\\n",
+      "\n": "\\n" + if preserve-newlines { "\n" } else { "" },
       "\t": "\\t",
       empty: "",
     ),
     unicode: (
-      "\n": "¤",
+      "\n": "¤" + if preserve-newlines { "\n" } else { "" },
       "\t": "»",
       " ": "␣",
       empty: "∅",
@@ -91,6 +25,117 @@
       raw(c)
     }
   }).join()
+}
+
+#let test(rules, select: auto, total: true) = {
+  import "parse.typ": parse
+  let status(ok, expect: true, validated: auto) = {
+    let color = if validated == auto {
+      if ok == expect {
+        green
+      } else {
+        red
+      }
+    } else if validated == none {
+      if ok == expect {
+        green
+      } else {
+        yellow
+      }
+    } else {
+      red
+    }
+    rect(width: 5mm, height: 5mm, fill: color)
+  }
+  let evaluate(ruleid, tt, expect: true, validate: auto) = {
+    let incr = ()
+    let (ok, ans) = parse(rules, label(ruleid), tt.text)
+    if ok {
+      incr.push("ok")
+    } else {
+      incr.push("err")
+    }
+     let validated = if validate != auto {
+      incr.push("validation-required")
+      if ok == expect {
+        incr.push("validated")
+        validate(tt.text, ans)
+      }
+    }
+    let input-box = box(fill: gray.lighten(90%), inset: 3pt)[#text(fill: blue)[#show-invisible(tt.text, mode: "unicode", preserve-newlines: true)]]
+    let rowspan = 1
+    let line1 = (
+      status(ok, expect: expect),
+      [#ans],
+    )
+    let line2 = if validated != none {
+      incr.push("invalid")
+      rowspan = 2
+      (
+        status(true, validated: validated),
+        [Validation failed: #validated],
+      )
+    } else {
+      ()
+    }
+    let arr = (
+      table.cell(rowspan: rowspan)[#input-box],
+      ..line1,
+      ..line2,
+    )
+    (incr, arr)
+  }
+  let outcomes = (ok: 0, err: 0, validation-required: 0, validated: 0, invalid: 0)
+  for (ruleid, rule) in rules {
+    if select != auto and ruleid not in select { continue }
+    if type(rule) != dictionary {
+      panic(rule)
+    }
+    if rule.yy != () {
+      table(columns: (2fr, auto, 5fr),
+        table.header(
+          [*#ruleid*], [],
+          text(fill: green)[*examples*],
+        ),
+        ..for (yy, validate) in rule.yy {
+          for tt in yy {
+            let (incr, arr) = evaluate(ruleid, tt, expect: true, validate: validate)
+            for i in incr { outcomes.at(i) += 1 }
+            arr
+          }
+        }
+      )
+    }
+    if rule.nn != () {
+      table(columns: (2fr, auto, 5fr),
+        table.header(
+          [*#ruleid*], [],
+          text(fill: red)[*counterexamples*],
+        ),
+        ..for (nn, validate) in rule.nn {
+          for tt in nn {
+            let (incr, arr) = evaluate(ruleid, tt, expect: false, validate: validate)
+            for i in incr { outcomes.at(i) += 1 }
+            arr
+          }
+        }
+      )
+    }
+  }
+  if total {
+    box(table(columns: 3,
+      [parsing], [#status(true)], [#status(false)],
+      [#{outcomes.ok + outcomes.err}], [#{outcomes.ok}], [#{outcomes.err}],
+    ))
+    h(1cm)
+    if outcomes.validated > 0 {
+      box(table(columns: 4,
+        [validation], [#status(true)], [#status(false, validated: none)], [#status(false)],
+        [#{outcomes.validation-required}], [#{outcomes.validated - outcomes.invalid}], [#{outcomes.validation-required - outcomes.validated}], [#{outcomes.invalid}]
+      ))
+    }
+
+  }
 }
 
 #let extract-line(input, idx) = {
@@ -163,6 +208,12 @@
 }
 
 #let error-inner(input, ans) = {
+  if "msg" not in ans {
+    panic(ans)
+  }
+  if "stack" not in ans {
+    panic(ans)
+  }
   box[
     #show-span(input, input.len() - ans.rest.len(), msg: ans.msg) \
     While trying to parse: #{ans.stack.map(s => raw("<" + str(s) + ">")).join[ $->$ ]}.
@@ -182,7 +233,11 @@
     #text(fill: red)[*Parsing error:*]
     The parser did not consume the entire input. \
     #show-span2(input, input.len() - ans.rest.len(), msg-post: [Surplus characters], highlight-post: ans.rest.len(), msg-pre: [Valid #raw("<" + str(ruleid) + ">")]) \
-    #{ if ans.next != none [
+    #{
+      while ans.next != none and ans.next.ok {
+        ans.next = ans.next.next
+      }
+      if ans.next != none [
       Hint: halted due to the following: \
       #error-inner(input, ans.next)
     ]}

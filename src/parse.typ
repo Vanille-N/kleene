@@ -1,12 +1,20 @@
 #import "operators.typ" as ops
 
-#let auto-cast(pat) = {
+// Automatically reinterprets builtin types/values to operators.
+#let auto-cast(
+  // Pattern to interpret.
+  // - #typ.t.function: native
+  // - #typ.t.string: cast through 
+  //
+  // -> any
+  pat
+) = {
   if type(pat) == function {
     pat
   } else if type(pat) == label {
-    ops.label(pat)
+    ops.label(str(pat))
   } else if type(pat) == str {
-    ops.raw(pat)
+    ops.str(pat)
   } else if type(pat) == array {
     ops.seq(..pat)
   } else if pat == $$ {
@@ -23,31 +31,60 @@
   if type(id) == label {
     stack.push(id)
     let rule = rules.at(str(id))
-    let select = rule.pat
-    let transform = rule.tr
-    let ans = auto-cast(select)(subparse(rules, stack), stack, input)
-    if ans.ok {
-      if "val" in ans {
-        if transform == none {
-          let _ = ans.remove("val")
-        } else if transform == auto {
-          // noop transform
-        } else if type(transform) == function {
-          ans.val = transform(ans.val)
-        } else {
-          panic("`tr` must be a function or none")
-        }
+    let latest-msg = (ok: false, backtrack: true, stack: stack, msg: [Empty rule], next: none, rest: input)
+    let backtrack = true
+    for group in rule.pat {
+      let select = group.pat
+      let transform = group.rw
+      while type(select) != function {
+        select = auto-cast(select)
       }
-      ans
-    } else {
-      ans
+      let ans = select(subparse(rules, stack), stack, input)
+      if not ans.backtrack { backtrack = false }
+      if ans.ok {
+        if "val" in ans {
+          if transform == none {
+            let _ = ans.remove("val")
+          } else if transform == auto {
+            // noop transform
+          } else if type(transform) == function {
+            ans.val = transform(ans.val)
+          } else {
+            panic("`rw` must be a function or none")
+          }
+        }
+        return (: ..ans, backtrack: backtrack)
+      } else if not backtrack {
+        return ans
+      } else {
+        latest-msg = ans
+      }
     }
+    latest-msg
   } else {
     auto-cast(id)(subparse(rules, stack), stack, input)
   }
 }
 
-#let parse(rules, pat, input) = {
+/// Initiate parsing.
+/// Returns a boolean and a result.
+/// The boolean indicates if the parsing is successful.
+/// It also determines the type of the result:
+/// - whatever type is returned by the last rewriting function in the case of a success,
+/// - content that can be directly displayed for an error message in the case of a failure.
+///
+/// -> (bool, result)
+#let parse(
+  /// Typically constructed by @cmd:kleene:grammar.
+  /// -> grammar
+  rules,
+  /// Indicates the entry point for the parsing.
+  /// -> label
+  pat,
+  /// Input data to parse.
+  /// -> str
+  input,
+) = {
   let ans = subparse(rules, ())(pat, input)
   if not ans.ok {
     import "ui.typ"
