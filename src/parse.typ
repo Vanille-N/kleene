@@ -40,15 +40,19 @@
     stack.push(id)
     let rule = rules.at(str(id))
     let select = rule.pat
-    while type(select) != function {
+    while type(select) != dictionary {
       select = auto-cast(select)
     }
-    stackframe.tailcall(select)(_subparse(rules, stack), stack, input)
+    let call = select.remove("call")
+    //panic(call, select)
+    stackframe.tailcall(call(..select))(_subparse(rules, stack), stack, input)
   } else {
-    while type(id) != function {
+    while type(id) != dictionary {
       id = auto-cast(id)
     }
-    stackframe.tailcall(id)(_subparse(rules, stack), stack, input)
+    let call = id.remove("call")
+    //panic(call, id)
+    stackframe.tailcall(call(..id))(_subparse(rules, stack), stack, input)
   }
 }
 

@@ -45,7 +45,7 @@ In more detail,
 <!-- @scrybe(if publish; jump import; grep preview; grep {{version}}) -->
 <!-- @scrybe(jump import; until ```; diff tests/demo/test.typ) -->
 ```typ
-#import "@preview/kleene:0.1.0"
+#import "@local/kleene:0.1.0"
 
 // This grammar parses lambda-terms.
 // See: https://en.wikipedia.org/wiki/Lambda_calculus

@@ -115,4 +115,3 @@
 #let (ok, ans) = parse-lambda("\x. \y y x")
 #assert(not ok)
 #ans
-
