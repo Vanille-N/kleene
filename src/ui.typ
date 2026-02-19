@@ -1,12 +1,34 @@
-#let show-invisible(line, preserve-newlines: false, base-color: black, mode: "special") = {
+/// #property-priv()
+/// Transforms a string to show invisible characters (spaces, linebreaks, tabs).
+/// Returns the resulting text as a #typ.raw block.
+/// -> content
+#let show-invisible(
+  /// Input text to transform.
+  /// -> str
+  line,
+  /// By default, linebreaks (```typc "\n"```) are replaced by a substitute character.
+  /// If this option is enabled, the formatted text will still have
+  /// the original linebreaks in addition to the marker.
+  /// -> bool
+  preserve-linebreaks: false,
+  /// Which color the special characters should be shown as.
+  /// -> color
+  dim-color: black.lighten(70%),
+  /// Determines the substitution dictionary to use.
+  /// - ```typc "special"```: `\n` and `\t`.
+  /// - ```typc "unicode"```: `¤`, `»`, `␣`, `∅` denote respectively
+  ///   linebreak, tab, space, eof.
+  /// -> str
+  mode: "special",
+) = {
   let dicts = (
     special: (
-      "\n": "\\n" + if preserve-newlines { "\n" } else { "" },
+      "\n": "\\n" + if preserve-linebreaks { "\n" } else { "" },
       "\t": "\\t",
       empty: "",
     ),
     unicode: (
-      "\n": "¤" + if preserve-newlines { "\n" } else { "" },
+      "\n": "¤" + if preserve-linebreaks { "\n" } else { "" },
       "\t": "»",
       " ": "␣",
       empty: "∅",
@@ -19,7 +41,7 @@
   }
   line.clusters().map(c => {
     if c in dict {
-      set text(fill: base-color.lighten(70%))
+      set text(fill: dim-color)
       raw(dict.at(c))
     } else {
       raw(c)
@@ -27,7 +49,21 @@
   }).join()
 }
 
-#let test(rules, select: auto, total: true) = {
+/// Runs the unit tests attached to a grammar
+/// See @cmd:prelude:yy and @cmd:prelude:nn for details.
+/// Runs all positive and negative tests, and formats them in a table.
+/// -> content
+#let test(
+  /// The grammar to test, as constructed by @cmd:kleene:grammar.
+  /// -> grammar
+  grammar,
+  /// Pass an array or a function to filter a subset of the tests.
+  /// -> auto | array | function
+  select: auto,
+  /// Whether to display the final tally of passed/failed tests.
+  /// -> bool
+  total: true,
+) = {
   import "parse.typ": parse
   let status(ok, expect: true, validated: auto) = {
     let color = if validated == auto {
@@ -49,7 +85,7 @@
   }
   let evaluate(ruleid, tt, expect: true, validate: auto) = {
     let incr = ()
-    let (ok, ans) = parse(rules, label(ruleid), tt.text)
+    let (ok, ans) = parse(grammar, label(ruleid), tt.text)
     if ok == expect {
       incr.push("ok")
     } else {
@@ -62,7 +98,7 @@
         validate(tt.text, ans)
       }
     }
-    let input-box = box(fill: gray.lighten(90%), inset: 3pt)[#text(fill: blue)[#show-invisible(tt.text, mode: "unicode", preserve-newlines: true)]]
+    let input-box = box(fill: gray.lighten(90%), inset: 3pt)[#text(fill: blue)[#show-invisible(tt.text, mode: "unicode", preserve-linebreaks: true)]]
     let rowspan = 1
     let line1 = (
       status(ok, expect: expect),
@@ -86,8 +122,11 @@
     (incr, arr)
   }
   let outcomes = (ok: 0, err: 0, validation-required: 0, validated: 0, invalid: 0)
-  for (ruleid, rule) in rules {
-    if select != auto and ruleid not in select { continue }
+  for (ruleid, rule) in grammar {
+    if select != auto {
+      if type(select) == array and ruleid not in select { continue }
+      if type(select) == function and not select(ruleid) { continue }
+    }
     if type(rule) != dictionary {
       panic(rule)
     }

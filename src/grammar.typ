@@ -136,28 +136,3 @@
   g
 }
 
-/*
-#let freshen(prefix, g1, except: auto) = {
-  let is-exception(except, k) = {
-    if except == auto {
-      false
-    } else if type(except) == array {
-      k in except
-    } else if type(except) == function {
-      except(k)
-    } else {
-      panic("Cannot interpret this list of exceptions")
-    }
-  }
-  let g = (:)
-  for (k, v) in g1 {
-    let k = if is-exception(except, k) {
-      k
-    } else {
-      prefix + k
-    }
-    g.insert(k, v)
-  }
-  g
-} 
-*/

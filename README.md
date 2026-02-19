@@ -1,4 +1,51 @@
-#import "/src/lib.typ" as kleene
+# Kleene
+
+A parser combinator in pure Typst.
+
+----
+
+<!-- @scrybe(not version; panic Please specify a version number) -->
+<!-- @scrybe(if publish; grep https; grep {{version}}) -->
+[Full documentation here.](docs/docs.pdf)
+<!-- [Full documentation here.](https://github.com/Vanille-N/kleene/releases/download/v0.1.0/docs.pdf) -->
+
+The skeleton of a Kleene invocation is as follows:
+<!-- @scrybe(not publish; jump import; grep local; grep {{version}}) -->
+<!-- @scrybe(if publish; jump import; grep preview; grep {{version}}) -->
+```typ
+#import "@local/kleene:0.1.0"
+
+#let grammar = {
+  // kleene.prelude contains all the operators, which we usually
+  // don't want to have polluting the global namespace.
+  import kleene.prelude: *
+
+  kleene.grammar(
+    // define the rules here
+    main: {
+      ..
+    },
+    ..
+  )
+}
+
+// If the grammar includes any unit tests, this will evaluate them.
+#kleene.test(grammar)
+
+// This is how to invoke the parser with <main> as the entry point.
+// The result is a tuple where the first boolean indicates if the parsing
+// was successful, and the second value is either the parsed output
+// or an error message.
+#let (ok, ans) = kleene.parse(grammar, <main>, "..")
+```
+
+In more detail,
+
+<!-- @scrybe(not publish; jump import; grep local; grep {{version}}) -->
+<!-- @scrybe(if publish; jump import; grep preview; grep {{version}}) -->
+<!-- @scrybe(jump import; until ```; diff tests/demo/test.typ) -->
+```typ
+#import "@preview/kleene:0.1.0"
 
 // This grammar parses lambda-terms.
 // See: https://en.wikipedia.org/wiki/Lambda_calculus
@@ -115,4 +162,6 @@
 #let (ok, ans) = parse-lambda("\x. \y y x")
 #assert(not ok)
 #ans
+```
+
 

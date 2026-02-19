@@ -30,10 +30,11 @@
   /// Label of a rule defined elsewhere in the grammar.
   /// -> str
   lab,
-) = (subparse, stack, input) => {
-  stackframe.tailcall(
-    subparse, stackframe.args(std.label(lab), input)
-  )
+) = {
+  let lab = std.label(lab)
+  (subparse, stack, input) => {
+    stackframe.tailcall(subparse)(lab, input)
+  }
 }
 
 /// Uses a regular expression to more efficiently match a string.
@@ -45,17 +46,19 @@
   /// #link("https://typst.app/docs/reference/foundations/regex/")[standard library]
   /// -> str
   re,
-) = (subparse, stack, input) => {
+) = {
   let re = std.regex(re)
-  if input.starts-with(re) {
-    let match = input.find(re)
-    let len = match.len()
-    let rest = input.slice(len)
-    let next = (
-      ok: false, backtrack: true, msg: [No longer part of the regex match], stack: stack, rest: rest)
-    (ok: true, backtrack: true, val: match, next: next, rest: rest)
-  } else {
-    (ok: false, backtrack: true, msg: [Regex does not match], next: none, stack: stack, rest: input)
+  (subparse, stack, input) => {
+    if input.starts-with(re) {
+      let match = input.find(re)
+      let len = match.len()
+      let rest = input.slice(len)
+      let next = (
+        ok: false, backtrack: true, msg: [No longer part of the regex match], stack: stack, rest: rest)
+      (ok: true, backtrack: true, val: match, next: next, rest: rest)
+    } else {
+      (ok: false, backtrack: true, msg: [Regex does not match], next: none, stack: stack, rest: input)
+    }
   }
 }
 
@@ -72,9 +75,7 @@
   let step(env) = {
     if env.pats.len() > 0 {
       let pat = env.pats.pop()
-      stackframe.pause(
-        subparse, stackframe.args(pat, env.input),
-        env,
+      stackframe.pause(subparse)(pat, env.input)(env)(
         (ans, env) => {
           if not ans.backtrack {
             env.backtrack = false
@@ -156,43 +157,44 @@
   /// List of patterns, implicitly cast to a @cmd:prelude:seq.
   /// -> pattern
   ..pats,
-) = (subparse, stack, input) => {
-  let step(env) = {
-    stackframe.pause(
-      subparse, stackframe.args(seq(array: false, ..pats), env.input),
-      env,
-      (ans, env) => {
-        if not ans.backtrack { env.backtrack = false }
-        if not ans.ok {
-          if env.count == 0 {
-            return (: ..ans, backtrack: env.backtrack)
-          } else {
-            return (ok: true, backtrack: env.backtrack, val: env.matches, next: ans, rest: env.input)
+) = {
+  let pat = seq(array: false, ..pats)
+  (subparse, stack, input) => {
+    let step(env) = {
+      stackframe.pause(subparse)(pat, env.input)(env)(
+        (ans, env) => {
+          if not ans.backtrack { env.backtrack = false }
+          if not ans.ok {
+            if env.count == 0 {
+              return (: ..ans, backtrack: env.backtrack)
+            } else {
+              return (ok: true, backtrack: env.backtrack, val: env.matches, next: ans, rest: env.input)
+            }
           }
-        }
-        env.count += 1
-        if "val" in ans {
-          env.matches.push(ans.val)
-        }
-        if ans.ok and ans.rest == env.input {
-          if env.matches.len() == 0 {
-            return (: ..ans, backtrack: env.backtrack)
-          } else {
-            return (ok: true, backtrack: env.backtrack, val: env.matches, next: ans, rest: env.input)
+          env.count += 1
+          if "val" in ans {
+            env.matches.push(ans.val)
           }
+          if ans.ok and ans.rest == env.input {
+            if env.matches.len() == 0 {
+              return (: ..ans, backtrack: env.backtrack)
+            } else {
+              return (ok: true, backtrack: env.backtrack, val: env.matches, next: ans, rest: env.input)
+            }
+          }
+          env.input = ans.rest
+          step(env)
         }
-        env.input = ans.rest
-        step(env)
-      }
+      )
+    }
+    let env = (
+      matches: (),
+      count: 0,
+      backtrack: true,
+      input: input,
     )
+    step(env)
   }
-  let env = (
-    matches: (),
-    count: 0,
-    backtrack: true,
-    input: input,
-  )
-  step(env)
 }
 
 /// Matches 0 or more instances of the inner pattern.
@@ -204,33 +206,34 @@
   /// List of patterns, implicitly cast to a @cmd:prelude:seq.
   /// -> pattern
   ..pats,
-) = (subparse, stack, input) => {
-  let step(env) = {
-    stackframe.pause(
-      subparse, stackframe.args(seq(array: false, ..pats), env.input),
-      env,
-      (ans, env) => {
-        if not ans.backtrack { env.backtrack = false }
-        if not ans.ok {
-          return (ok: true, backtrack: env.backtrack, val: env.matches, next: ans, rest: env.input)
+) = {
+  let pat = seq(array: false, ..pats)
+  (subparse, stack, input) => {
+    let step(env) = {
+      stackframe.pause(subparse)(pat, env.input)(env)(
+        (ans, env) => {
+          if not ans.backtrack { env.backtrack = false }
+          if not ans.ok {
+            return (ok: true, backtrack: env.backtrack, val: env.matches, next: ans, rest: env.input)
+          }
+          if "val" in ans {
+            env.matches.push(ans.val)
+          }
+          if ans.ok and ans.rest == env.input {
+            return (ok: true, backtrack: env.backtrack, val: env.matches, next: ans, rest: env.input)
+          }
+          env.input = ans.rest
+          step(env)
         }
-        if "val" in ans {
-          env.matches.push(ans.val)
-        }
-        if ans.ok and ans.rest == env.input {
-          return (ok: true, backtrack: env.backtrack, val: env.matches, next: ans, rest: env.input)
-        }
-        env.input = ans.rest
-        step(env)
-      }
+      )
+    }
+    let env = (
+      matches: (),
+      backtrack: true,
+      input: input,
     )
+    step(env)
   }
-  let env = (
-    matches: (),
-    backtrack: true,
-    input: input,
-  )
-  step(env)
 }
 
 
@@ -247,9 +250,7 @@
   let step(env) = {
     if env.pats.len() > 0 {
       let pat = env.pats.pop()
-      stackframe.pause(
-        subparse, stackframe.args(pat, input),
-        env,
+      stackframe.pause(subparse)(pat, input)(env)(
         (ans, env) => {
           if not ans.backtrack {
             env.backtrack = false
@@ -284,21 +285,22 @@
 #let maybe(
   /// Implicitly cast to a @cmd:prelude:seq.
   /// -> pattern
-  ..pat,
-) = (subparse, stack, input) => {
-  stackframe.pause(
-    subparse, stackframe.args(seq(array: false, ..pat), input),
-    (),
-    (ans, _) => {
-      if ans.ok {
-        (: ..ans, val: (ans.at("val", default: none),))
-      } else if not ans.backtrack {
-        ans
-      } else {
-        (ok: true, backtrack: true, val: (), next: ans, rest: input)
+  ..pats,
+) = {
+  let pat = seq(array: false, ..pats)
+  (subparse, stack, input) => {
+    stackframe.pause(subparse)(pat, input)()(
+      ans => {
+        if ans.ok {
+          (: ..ans, val: (ans.at("val", default: none),))
+        } else if not ans.backtrack {
+          ans
+        } else {
+          (ok: true, backtrack: true, val: (), next: ans, rest: input)
+        }
       }
-    }
-  )
+    )
+  }
 }
 
 /// Cancels out a @cmd:prelude:commit to re-enable backtracking.
@@ -310,11 +312,28 @@
   /// -> pattern
   ..pats,
 ) = (subparse, stack, input) => {
-  stackframe.pause(
-    subparse, stackframe.args(seq(array: false, ..pats), input),
-    (),
-    (ans, _) => {
+  stackframe.pause(subparse)(seq(array: false, ..pats), input)()(
+    ans => {
       (: ..ans, backtrack: true)
+    }
+  )
+}
+
+/// Matches an arbitrary pattern, but returns #typ.none.
+///
+/// See: @pat-drop.
+/// -> pattern
+#let drop(
+  /// Implicitly cast to a @cmd:prelude:seq.
+  /// -> pattern
+  ..pats,
+) = (subparse, stack, input) => {
+  stackframe.pause(subparse)(seq(array: false, ..pats), input)()(
+    ans => {
+      if "val" in ans {
+        let _ = ans.remove("val")
+      }
+      ans
     }
   )
 }
@@ -334,48 +353,26 @@
   /// - #typ.t.function: applies the given function.
   /// -> none | auto | function
   fun,
-) = (..pats) => (subparse, stack, input) => {
-  stackframe.pause(
-    subparse, stackframe.args(seq(array: false, ..pats), input),
-    (),
-    (ans, _) => {
-      if "val" in ans {
-        if fun == none {
-          let _ = ans.remove("val")
-        } else if fun == auto {
-          // noop transform
-        } else if type(fun) == function {
-          ans.val = fun(ans.val)
-        } else {
-          panic(`transformation must be a function, none, or auto`)
+) = {
+  if fun == none {
+    drop
+  } else if fun == auto {
+    (..pats) => seq(array: false, ..pats)
+  } else if type(fun) == function {
+    (..pats) => (subparse, stack, input) => {
+      stackframe.pause(subparse)(seq(array: false, ..pats), input)()(
+        ans => {
+          if "val" in ans {
+            ans.val = fun(ans.val)
+          }
+          ans
         }
-      }
-      ans
+      )
     }
-  )
+  } else {
+    panic(`transformation must be a function, none, or auto`)
+  }
 }
-
-/// Matches an arbitrary pattern, but returns #typ.none.
-///
-/// See: @pat-drop.
-/// -> pattern
-#let drop(
-  /// Implicitly cast to a @cmd:prelude:seq.
-  /// -> pattern
-  ..pats,
-) = (subparse, stack, input) => {
-  stackframe.pause(
-    subparse, stackframe.args(seq(array: false, ..pats), input),
-    (),
-    (ans, _) => {
-      if "val" in ans {
-        let _ = ans.remove("val")
-      }
-      ans
-    }
-  )
-}
-
 
 /// Positive lookahead: matches a pattern without consuming the input.
 /// Returns #typ.none.
@@ -387,18 +384,19 @@
   /// Auto-cast to a @cmd:prelude:seq.
   /// -> pattern
   ..pats,
-) = (subparse, stack, input) => {
-  stackframe.pause(
-    subparse, stackframe.args(seq(array: false, ..pats), input),
-    (),
-    (ans, _) => {
-      if ans.ok {
-        (ok: true, backtrack: ans.backtrack, next: [Successful lookahead of length #{input.len() - ans.rest.len()}], stack: stack, rest: input)
-      } else {
-        ans
+) = {
+  let pat = seq(array: false, ..pats)
+  (subparse, stack, input) => {
+    stackframe.pause(subparse)(pat, input)()(
+      ans => {
+        if ans.ok {
+          (ok: true, backtrack: ans.backtrack, next: [Successful lookahead of length #{input.len() - ans.rest.len()}], stack: stack, rest: input)
+        } else {
+          ans
+        }
       }
-    }
-  )
+    )
+  }
 }
 
 /// Negative lookahead: checks that a pattern does not match.
@@ -411,16 +409,18 @@
   /// Auto-cast to a @cmd:prelude:seq.
   /// -> pattern
   ..pats,
-) = (subparse, stack, input) => {
-  stackframe.pause(
-    subparse, stackframe.args(seq(array: false, ..pats), input),
-    (),
-    (ans, _) => {
-      if ans.ok {
-        (ok: false, backtrack: ans.backtrack, msg: [Lookahead of length #{input.len() - ans.rest.len()} should have failed], stack: stack, rest: input)
-      } else {
-        (ok: true, backtrack: ans.backtrack, next: [Lookahead of length #{input.len() - ans.rest.len()} failed as expected], stack: stack, rest: input)
+) = {
+  let pat = seq(array: false, ..pats)
+  (subparse, stack, input) => {
+    stackframe.pause(subparse)(pat, input)()(
+      ans => {
+        if ans.ok {
+          (ok: false, backtrack: ans.backtrack, msg: [Lookahead of length #{input.len() - ans.rest.len()} should have failed], stack: stack, rest: input)
+        } else {
+          (ok: true, backtrack: ans.backtrack, next: [Lookahead of length #{input.len() - ans.rest.len()} failed as expected], stack: stack, rest: input)
+        }
       }
-    }
-  )
+    )
+  }
 }
+

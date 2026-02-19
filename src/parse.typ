@@ -1,13 +1,18 @@
 #import "stackframe.typ"
 #import "operators.typ" as ops
 
-// Automatically reinterprets builtin types/values to operators.
+/// Automatically reinterprets builtin types/values to operators.
+/// #property-priv()
+/// -> pattern
 #let auto-cast(
-  // Pattern to interpret.
-  // - #typ.t.function: native
-  // - #typ.t.string: cast through 
-  //
-  // -> any
+  /// Pattern to interpret.
+  /// - #typ.t.function: native
+  /// - #typ.t.string: cast through @cmd:prelude:str
+  /// - #typ.t.label: cast through @cmd:prelude:label
+  /// - #typ.t.array: cast through @cmd:prelude:seq
+  /// - ```typc $$```: shorthand for @cmd:prelude:commit
+  /// - #typ.raw: cast through @cmd:prelude:regex
+  /// -> any
   pat
 ) = {
   if type(pat) == function {
@@ -27,6 +32,8 @@
   }
 }
 
+// Manages the mutual recursion between operators
+// and tracks the current state of the rule stack.
 #let _subparse(rules, stack) = (id, input) => {
   let stack = stack
   if type(id) == label {
@@ -36,12 +43,12 @@
     while type(select) != function {
       select = auto-cast(select)
     }
-    stackframe.tailcall(select, stackframe.args(_subparse(rules, stack), stack, input))
+    stackframe.tailcall(select)(_subparse(rules, stack), stack, input)
   } else {
     while type(id) != function {
       id = auto-cast(id)
     }
-    stackframe.tailcall(id, stackframe.args(_subparse(rules, stack), stack, input))
+    stackframe.tailcall(id)(_subparse(rules, stack), stack, input)
   }
 }
 
@@ -53,7 +60,6 @@
 /// It also determines the type of the result:
 /// - whatever type is returned by the last rewriting function in the case of a success,
 /// - content that can be directly displayed for an error message in the case of a failure.
-///
 /// -> (bool, result)
 #let parse(
   /// Typically constructed by @cmd:kleene:grammar.

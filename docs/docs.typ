@@ -21,6 +21,17 @@
   ),
 )
 
+#let property-priv() = elements.note(
+  dy: -1em,
+  styles.pill(
+    "emph.deprecated",
+    (
+      "Private"
+    )
+  )
+)
+
+
 #let show-module(name, module: false, scope: (:), outlined: true) = {
   let path = "../src/" + name + ".typ"
   import path as mod
@@ -30,6 +41,7 @@
     read(path),
     scope: (
       property-unstable: property-unstable,
+      property-priv: property-priv,
       ..scope,
     ),
   )
@@ -66,7 +78,7 @@
     KLEENE is *not* focused on performance above all else: PEGs interpreted by
     recursive descent are known to exhibit exponential-time worst-case parsing.
     If the parsing work you need is very time-sensitive, consider using a more
-    specialized library.
+    specialized library or a non-native parser (@alternatives).
 
     #v(2cm)
 
@@ -124,7 +136,6 @@ At minimum, using KLEENE takes the following form:
   #import "@preview/kleene:0.1.0"
 
   #let grammar = {
-
     // kleene.prelude contains all the operators, which we usually
     // don't want to have polluting the global namespace.
     import kleene.prelude: *
@@ -142,7 +153,7 @@ At minimum, using KLEENE takes the following form:
   #kleene.test(grammar)
 
   // This is how to invoke the parser with <main> as the entry point.
-  #kleene.parse(grammar, <main>, "..")
+  #let (ok, ans) = kleene.parse(grammar, <main>, "..")
   ```
 ]
 
@@ -204,9 +215,9 @@ string `"foo"`:
 
 
 To start with an easy example, let's write a parser of integers in base 10.
-We take the opportunity to demonstrate the use of `kleene.test` to run the
-inline unit tests declared by `yy` and `nn`, as well as `tr` to transform
-the parsed result post-matching.
+We take the opportunity to demonstrate the use of @cmd:kleene:test to run the
+inline unit tests declared by @cmd:prelude:yy and @cmd:prelude:nn,
+as well as @cmd:prelude:rw to transform the parsed result post-matching.
 
 #test-example(```typ
   #let grammar = kleene.grammar(
@@ -216,8 +227,8 @@ the parsed result post-matching.
     digits: {
       // Using the <label> notation you can recursively refer to other rules
       pat(iter(<digit>))
-      // `rw`, standing for "rewrite" applies a post-parsing transformation to the data.
-      // By default, `repeat` produces an array.
+      // `rw`, standing for "rewrite" applies a post-parsing transformation
+      // to the data. By default, `iter` produces an array.
       rw(ds => ds.join())
     },
     int: {
@@ -234,7 +245,7 @@ the parsed result post-matching.
 === Integers
 
 KLEENE can backtrack, and the backtracking points are indicated by the operator
-`fork`. Several possible sub-patterns can be given, and they will be explored
+@cmd:prelude:fork. Several possible sub-patterns can be given, and they will be explored
 sequentially until a match. This lets you define a rule as the union of other
 rules. To illustrate this, we add hexadecimal numbers to our parser.
 
@@ -314,7 +325,7 @@ Any #typ.t.string is implicitly cast to `str`.
 
 ```typc regex("..")```, with ```typc ".."``` the same string you would pass to the standard
 function ```typc std.regex```, matches a regular expression.
-Any raw text (i.e., wrapped in ```typ `..` ```) is implicitly cast to `raw`.
+Any raw text (i.e., wrapped in ```typ `..` ```) is implicitly cast to `regex`.
 
 #test-example(```typ
 #let grammar = kleene.grammar(
@@ -357,7 +368,7 @@ are variadic and accept multiple arguments that are understood as a `seq`.
   rather than a singleton array.
   In both cases the array returned by `seq` is pre-filtered to exclude elements
   that are `none` (either ```typc eof()``` matches, or those that were dropped
-  as explained below).
+  as explained in @ghost-ops).
 ]
 
 #test-example(```typ
@@ -517,7 +528,7 @@ It is equivalent to `*` in regular expressions.
 )
 ````)
 
-== Ghost operators
+== Ghost operators <ghost-ops>
 
 These operators do not consume text or produce outputs, but they can manipulate
 how the parser behaves, transform data, and sometimes improve error messages.
@@ -563,6 +574,7 @@ If multiple patterns are provided, they are implicitly wrapped in a `seq`.
 This can be very useful to improve both the performance of the parser
 and the quality of error messages.
 
+Without `commit`, a grammar could look like this:
 #test-example(```typ
 #let grammar = kleene.grammar(
   int: {
@@ -880,13 +892,15 @@ of expressions, as below:
     yy(`11`)
   },
   mul-expr: {
-    pat(<atom>, <whitespace>, fork("*", "/"), <whitespace>, <mul-expr>)
+    pat(<atom>, iter(<whitespace>, fork("*", "/"), <whitespace>, <atom>))
+    rw(elts => (mul: elts.flatten()))
     pat(<atom>)
     rw(auto)
     yy(`42`, `11 * 12 * 4`)
   },
   add-expr: {
-    pat(<mul-expr>, <whitespace>, fork("+", "-"), <whitespace>, <add-expr>)
+    pat(<mul-expr>, iter(<whitespace>, fork("+", "-"), <whitespace>, <mul-expr>))
+    rw(elts => (add: elts.flatten()))
     pat(<mul-expr>)
     rw(auto)
     yy(`1 + 1 * 2 - 1`)
@@ -898,33 +912,40 @@ of expressions, as below:
 )
 ```)
 
+As a related limitation, PEG grammars are not suited to left-recursive rules
+(when the rule appears immediately at the left of itself without consuming any input).
+Prioritize using iteration instead.
 
-= Full API
-
-#custom-type("pattern")
-#custom-type("rule")
-#custom-type("grammar")
+= Public API
 
 == Toplevel definitions
 
+Unless explicitly marked `private`, the functions in this module are available directly
+as ```typc kleene.function(..)```.
+
+=== Parsing
 #show-module("parse", module: "kleene")
+
+=== Grammar builders
+#custom-type("grammar", color: color.mix(purple, red).lighten(60%))
 #show-module("grammar", module: "kleene")
+
+=== Running tests
+#show-module("ui", module: "kleene")
 
 == Pattern combinators
 
+#custom-type("pattern", color: purple.lighten(70%))
 #show-module("operators", module: "prelude")
 
 == Rule definition
 
+#custom-type("rule", color: orange.lighten(60%))
 #show-module("builders", module: "prelude")
-
-//#show-module("ui")
 
 = About
 
-== Related works
-
-=== Typst alternatives
+== Alternatives <alternatives>
 
 - #universe("jiexi") was recently released, employing a completely different approach
   compared to KLEENE in both implementation and philosophy: #universe("jiexi")
@@ -934,11 +955,9 @@ of expressions, as below:
 - KLEENE is general-purpose, but if the language you want to read already has
   a dedicated parser you will likely get much better results with a specialized tool,
   of which #link("https://typst.app/universe/search/?q=parse")[many already exist].
-
-=== In other languages
-
-- #link("https://pest.rs/")[pest (Rust)]
-- #link("https://github.com/we-like-parsers/pegen")[Pegen (Python)]
+- Writing a #link("https://github.com/ensko/typst-parsing-plugin")[plugin]
+  is not strictly speaking a native solution, but if you're willing to write
+  the parser in Rust you will be able to import it into Typst.
 
 == Dependencies
 
