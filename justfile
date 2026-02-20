@@ -26,6 +26,7 @@ upstream:
     git checkout kleene && \
     git fetch upstream && \
     git reset --hard upstream/main
+  mkdir -p $(cat .packages)/packages/preview/kleene
   cp -r release $(cat .packages)/packages/preview/kleene/$(cat .version)
   cd $(cat .packages) && \
     git add . && \

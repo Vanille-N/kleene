@@ -33,7 +33,7 @@
       // `drop` is the inline equivalent to `rw(none)`.
       pat(drop(maybe(<whitespace>)))
     },
-    // You can easily define function to help you
+    // You can easily define functions to help you
     // specify repetitive rules.
     ..{
       let optional-spaces(symbol) = {
