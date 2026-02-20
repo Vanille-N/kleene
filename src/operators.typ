@@ -51,14 +51,14 @@
   array: true,
 ) = (call: match.seq, pats: pats.pos(), array: array)
 
-/// Helper to build sequences for variadic patterns.
-/// -> pattern
+// Helper to build sequences for variadic patterns.
+// -> pattern
 #let auto-seq(
-  /// Sub-patterns.
-  /// -> pattern
+  // Sub-patterns.
+  // -> pattern
   ..pats,
-  /// If true, forces the result to be an array even if it is of size 1.
-  /// -> bool
+  // If true, forces the result to be an array even if it is of size 1.
+  // -> bool
   array: false,
 ) = {
   let pats = pats.pos()
@@ -117,6 +117,17 @@
   /// -> pattern
   ..pats,
 ) = (call: match.fork, pats: pats.pos())
+
+#let auto-fork(
+  ..pats,
+) = {
+  let pats = pats.pos()
+  if pats.len() == 1 {
+    pats.at(0)
+  } else {
+    fork(..pats)
+  }
+}
 
 /// Matches 0 or 1 instances of the inner pattern.
 /// Returns an #typ.t.array, either empty or singleton.

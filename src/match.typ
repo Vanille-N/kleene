@@ -22,10 +22,10 @@
       let len = match.len()
       let rest = input.slice(len)
       let next = (
-        ok: false, backtrack: true, msg: [No longer part of the regex match], stack: stack, rest: rest)
+        ok: false, backtrack: true, msg: [No longer part of the regex match '#raw(arg)'], stack: stack, rest: rest)
       (ok: true, backtrack: true, val: match, next: next, rest: rest)
     } else {
-      (ok: false, backtrack: true, msg: [Regex does not match], next: none, stack: stack, rest: input)
+      (ok: false, backtrack: true, msg: [Regex '#raw(arg)' does not match], next: none, stack: stack, rest: input)
     }
   }
 }
@@ -173,6 +173,7 @@
         }
       )
     } else {
+      env.latest-msg.msg = [#env.latest-msg.msg]
       env.latest-msg
     }
   }

@@ -75,10 +75,12 @@
     or extended with new rules, have built-in well-formatted error reporting,
     and are easy to test.
 
-    KLEENE is *not* focused on performance above all else: PEGs interpreted by
-    recursive descent are known to exhibit exponential-time worst-case parsing.
+    KLEENE is *not* focused on performance above all else, in part
+    because PEGs interpreted by recursive descent are known to exhibit
+    exponential-time worst-case parsing.
     If the parsing work you need is very time-sensitive, consider using a more
-    specialized library or a non-native parser (@alternatives).
+    specialized library or a non-native parser (consult @alternatives
+    for a few alternatives).
 
     #v(2cm)
 
@@ -861,7 +863,51 @@ booleans.
   }
 )
 
-#let grammar = kleene.patch(grammar1, grammar2)
+// In addition, `trim` removes rules that become unreachable.
+#let grammar = kleene.trim(roots: <list>, kleene.patch(grammar1, grammar2))
+```)
+
+== Freshening
+
+To avoid collisions during @cmd:kleene:extend and @cmd:kleene:patch,
+you can use the @cmd:kleene:freshen operation.
+
+#test-example(```typ
+#let grammar1 = kleene.grammar(
+  int: {
+    pat(`[0-9]+`)
+    rw(ds => int(ds))
+    yy(`42`)
+  },
+  comma: pat(drop(` *, *`)),
+  elem: pat(<int>),
+  list: {
+    pat(drop("["), star(<elem>, <comma>), maybe(<elem>), drop("]"))
+    rw(elts => elts.flatten())
+    yy(`[]`, `[1]`, `[1,]`, `[1, 2, 3, 4]`)
+  }
+)
+
+#let grammar2 = kleene.trim(roots: <list>, kleene.patch(grammar1, kleene.grammar(
+  // <bool> is a new rule (be careful of accidental collisions)
+  bool: {
+    pat(fork("true", "false"))
+    rw(e => ("true": true, "false": false).at(e))
+    yy(`true`, `false`)
+  },
+  // <elem> will replace the original one
+  elem: pat(<bool>),
+  // We re-specify <list> but without a `pat`,
+  // just to replace its unit tests that wouldn't work anymore.
+  list: {
+    yy(`[true, false, false]`)
+  }
+)))
+
+#let grammar = kleene.extend(
+  kleene.freshen(grammar1, prefix: "int-", exclude: <int>),
+  kleene.freshen(grammar2, prefix: "bool-", exclude: <bool>),
+)
 ```)
 
 = Advanced techniques

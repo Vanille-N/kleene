@@ -449,3 +449,5 @@ main: // main function
 
 #kleene.test(rules)
 
+#let _ = kleene.freshen(rules, prefix: "_", exclude: (<arm>,))
+#let _ = kleene.trim(rules, roots: (<text-section>, <data-section>))
