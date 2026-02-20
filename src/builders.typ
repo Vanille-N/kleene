@@ -9,7 +9,7 @@
   /// -> pattern
   ..pats,
 ) = {
-  ((pat: ops.seq(array: false, ..pats)),)
+  ((pat: ops.auto-seq(array: false, ..pats)),)
 }
 
 /// Adds a rewrite to all preceding @cmd:prelude:pat that do not already have one.

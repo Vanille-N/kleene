@@ -44,14 +44,12 @@
       select = auto-cast(select)
     }
     let call = select.remove("call")
-    //panic(call, select)
     stackframe.tailcall(call(..select))(_subparse(rules, stack), stack, input)
   } else {
     while type(id) != dictionary {
       id = auto-cast(id)
     }
     let call = id.remove("call")
-    //panic(call, id)
     stackframe.tailcall(call(..id))(_subparse(rules, stack), stack, input)
   }
 }

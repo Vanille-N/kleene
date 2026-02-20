@@ -4,6 +4,10 @@
   (ok: true, backtrack: false, next: none, rest: input)
 }
 
+#let label(arg: auto) = (subparse, stack, input) => {
+  stackframe.tailcall(subparse)(std.label(arg), input)
+}
+
 #let eof() = (subparse, stack, input) => {
   if input == "" {
     (ok: true, backtrack: true, next: none, rest: input)
