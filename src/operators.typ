@@ -34,7 +34,53 @@
   /// #link("https://typst.app/docs/reference/foundations/regex/")[standard library]
   /// -> str
   re,
-) = (call: match.regex, arg: re)
+) = {
+  let _ = std.regex(re)
+  (call: match.regex, arg: re)
+}
+
+/// Matches a string literal. Returns a #typ.t.str.
+///
+/// See: @pat-str.
+/// -> pattern
+#let str(
+  /// Any string to match as-is.
+  /// -> str
+  string,
+) = (call: match.str, arg: string)
+
+/// Automatically reinterprets builtin types/values to operators.
+/// #property-priv()
+/// -> pattern
+#let auto-cast(
+  /// Pattern to interpret.
+  /// - #typ.t.function: native
+  /// - #typ.t.string: cast through @cmd:prelude:str
+  /// - #typ.t.label: cast through @cmd:prelude:label
+  /// - #typ.t.array: cast through @cmd:prelude:seq
+  /// - ```typc $$```: shorthand for @cmd:prelude:commit
+  /// - #typ.raw: cast through @cmd:prelude:regex
+  /// -> any
+  pat
+) = {
+  if type(pat) == dictionary {
+    assert("call" in pat)
+    pat
+  } else if type(pat) == std.label {
+    label(std.str(pat))
+  } else if type(pat) == std.str {
+    str(pat)
+  } else if type(pat) == array {
+    (call: match.seq, pats: pat.map(auto-cast), array: true)
+    seq(..pat)
+  } else if pat == $$ {
+    commit()
+  } else if type(pat) == content and pat.func() == std.raw {
+    regex(pat.text)
+  } else {
+    panic("Cannot interpret an object of type " + str(type(pat)) + " as a parser")
+  }
+}
 
 /// Matches a sequence of patterns in order.
 /// Returns an #typ.t.array, except for possible optimizations where an implicit
@@ -49,7 +95,10 @@
   /// If true, forces the result to be an array even if it is of size 1.
   /// -> bool
   array: true,
-) = (call: match.seq, pats: pats.pos(), array: array)
+) = {
+  let pats = pats.pos().map(auto-cast)
+  (call: match.seq, pats: pats, array: array)
+}
 
 // Helper to build sequences for variadic patterns.
 // -> pattern
@@ -63,21 +112,12 @@
 ) = {
   let pats = pats.pos()
   if (not array) and pats.len() == 1 {
-    pats.at(0)
+    auto-cast(pats.at(0))
   } else {
     seq(array: array, ..pats)
   }
 }
 
-/// Matches a string literal. Returns a #typ.t.str.
-///
-/// See: @pat-str.
-/// -> pattern
-#let str(
-  /// Any string to match as-is.
-  /// -> str
-  string,
-) = (call: match.str, arg: string)
 
 /// Matches 1 or more instances of the inner pattern.
 /// Returns an #typ.t.array.
@@ -116,14 +156,17 @@
   /// List of ordered patterns between which a choice is made.
   /// -> pattern
   ..pats,
-) = (call: match.fork, pats: pats.pos())
+) = {
+  let pats = pats.pos().map(auto-cast)
+  (call: match.fork, pats: pats)
+}
 
 #let auto-fork(
   ..pats,
 ) = {
   let pats = pats.pos()
   if pats.len() == 1 {
-    pats.at(0)
+    auto-cast(pats.at(0))
   } else {
     fork(..pats)
   }

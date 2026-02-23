@@ -4,8 +4,8 @@
   (ok: true, backtrack: false, next: none, rest: input)
 }
 
-#let label(arg: auto) = (subparse, stack, input) => {
-  stackframe.tailcall(subparse)(std.label(arg), input)
+#let label(lab) = (subparse, stack, input) => {
+  panic("`label` is a compiler builtin and cannot be directly invoked")
 }
 
 #let eof() = (subparse, stack, input) => {
