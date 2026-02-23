@@ -10,9 +10,9 @@
   if type(id) != dictionary {
     panic(id, stack)
   }
-  while id.call == match.label {
-    stack.push(id.arg)
-    let rule = rules.at(id.arg)
+  while "lab" in id {
+    stack.push(id.lab)
+    let rule = rules.at(id.lab)
     let select = rule.pat
     id = select
   }

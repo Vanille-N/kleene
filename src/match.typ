@@ -4,10 +4,6 @@
   (ok: true, backtrack: false, next: none, rest: input)
 }
 
-#let label(lab) = (subparse, stack, input) => {
-  panic("`label` is a compiler builtin and cannot be directly invoked")
-}
-
 #let eof() = (subparse, stack, input) => {
   if input == "" {
     (ok: true, backtrack: true, next: none, rest: input)

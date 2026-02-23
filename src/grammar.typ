@@ -1,4 +1,5 @@
 #import "/src/operators.typ" as ops
+#import "match.typ"
 
 #let combine(id, descr) = {
   let rule = (pat: (), yy: (), nn: ())
@@ -60,22 +61,16 @@
   }
   let explore-pat(pat) = {
     let reach = ()
-    if type(pat) == label {
-      reach.push(pat)
-    } else if type(pat) == dictionary {
-      if pat.call == ops.label {
-        reach.push(label(pat.arg))
-      } else if "pat" in pat {
-        reach += explore-pat(pat.pat)
-      } else if "pats" in pat {
-        for sub in pat.pats {
-          reach += explore-pat(sub)
-        }
-      } else {
-        // this is a leaf
+    if "lab" in pat {
+      reach.push(pat.lab)
+    } else if "pat" in pat {
+      reach += explore-pat(pat.pat)
+    } else if "pats" in pat {
+      for sub in pat.pats {
+        reach += explore-pat(sub)
       }
     } else {
-      // also a leaf
+      // this is a leaf
     }
     reach
   }
@@ -215,7 +210,7 @@
 ) = {
   let is-excluded(exclude, lab) = {
     if type(exclude) == label {
-      lab == exclude
+      lab == str(exclude)
     } else if type(exclude) == function {
       exclude(lab)
     } else if type(exclude) == array {
@@ -226,26 +221,19 @@
   }
   let is-excluded = is-excluded.with(exclude)
   let freshen-pat(pat) = {
-    if type(pat) == label {
-      if is-excluded(pat) or (str(pat) not in grammar) {
+    if "lab" in pat {
+      if is-excluded(pat.lab) or (pat.lab not in grammar) {
         pat
       } else {
-        label(prefix + str(pat))
+        ops.label(prefix + pat.lab)
       }
     } else if type(pat) == dictionary {
-      if pat.call == ops.label {
-        if not (is-excluded(label(pat.arg)) or (pat.arg not in grammar)) {
-          pat.arg = prefix + pat.arg
-        }
-        pat
+      if "pat" in pat {
+        pat.pat = freshen-pat(pat.pat)
+      } else if "pats" in pat {
+        pat.pats = pat.pats.map(freshen-pat)
       } else {
-        if "pat" in pat {
-          pat.pat = freshen-pat(pat.pat)
-        } else if "pats" in pat {
-          pat.pats = pat.pats.map(freshen-pat)
-        } else {
-          // this is a leaf, there's nothing to freshen
-        }
+        // this is a leaf, there's nothing to freshen
       }
       pat
     } else {
@@ -259,7 +247,7 @@
   let out = (:)
   for (id, rule) in grammar {
     let rule = freshen-rule(rule)
-    let id = if is-excluded(label(id)) {
+    let id = if is-excluded(id) {
       id
     } else {
       prefix + id

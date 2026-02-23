@@ -23,7 +23,7 @@
   /// Label of a rule defined elsewhere in the grammar.
   /// -> str
   lab,
-) = (call: match.label, arg: lab)
+) = (lab: lab)
 
 /// Uses a regular expression to more efficiently match a string.
 /// Returns #typ.t.string.
@@ -64,7 +64,7 @@
   pat
 ) = {
   if type(pat) == dictionary {
-    assert("call" in pat)
+    assert("lab" in pat or "call" in pat)
     pat
   } else if type(pat) == std.label {
     label(std.str(pat))
