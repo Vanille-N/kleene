@@ -19,6 +19,7 @@ publish:
   rm -rf release/*
   cp -r src release/
   cp README.md LICENSE typst.toml release/
+  rsync -rhP tests --include='*/' --include='demo/ref/*.png' --exclude='*' release/
 
 upstream:
   cat .version > /tmp/kleene-version
@@ -27,6 +28,7 @@ upstream:
     git fetch upstream && \
     git reset --hard upstream/main
   mkdir -p $(cat .packages)/packages/preview/kleene
+  rm -rf $(cat .packages)/packages/preview/kleene/$(cat .version)
   cp -r release $(cat .packages)/packages/preview/kleene/$(cat .version)
   cd $(cat .packages) && \
     git add . && \

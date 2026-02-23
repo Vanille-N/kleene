@@ -21,11 +21,10 @@ The skeleton of a Kleene invocation is as follows:
   import kleene.prelude: *
 
   kleene.grammar(
-    // define the rules here
     main: {
-      ..
+      // definition of <main> goes here
     },
-    ..
+    // more rules can be specified
   )
 }
 
