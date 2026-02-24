@@ -94,7 +94,7 @@
     }
   }
   for (id, _) in grammar {
-    if label(id) not in reach {
+    if id not in reach {
       let _ = grammar.remove(id)
     }
   }

@@ -1,0 +1,102 @@
+#import "/src/lib.typ" as kleene
+
+// This grammar parses lambda-terms.
+// See: https://en.wikipedia.org/wiki/Lambda_calculus
+#let grammar = {
+  import kleene.prelude: *
+  kleene.grammar(
+    // Declares a new rule <ident>
+    ident: {
+      // <ident> has a single pattern, specified by a regex.
+      // By default, a successful match returns a `string`.
+      pat(`[a-zA-Z][a-zA-Z0-9_]*`)
+      // Here is a positive unit test (must parse)
+      //yy(`foo`)
+      // Here is a negative unit test (must fail)
+      //nn(`0`)
+    },
+    whitespace: {
+      // `iter` matches 1 or more repetitions of a pattern.
+      // `fork` introduces a backtracking point where
+      // we try the patterns sequentially until one of them works.
+      pat(iter(fork(" ", "\n", "\t")))
+      // `rewrite`, abbreviated `rw`, allows one to transform
+      // the match post-parsing. Passing `none` will drop
+      // the entire match and make it return no data.
+      // This is typically used for markers and whitespace.
+      rw(none)
+    },
+    blank: {
+      // `maybe` matches 0 or 1 repetitions of a pattern.
+      // A label will cause the parser to recursively call
+      // another defined rule.
+      // `drop` is the inline equivalent to `rw(none)`.
+      pat(drop(maybe(<whitespace>)))
+    },
+    // You can easily define functions to help you
+    // specify repetitive rules.
+    ..{
+      let optional-spaces(symbol) = {
+        // A sequence of patterns will match if every
+        // pattern is matched one after the other
+        pat(<blank>, symbol, <blank>)
+        rw(none)
+      }
+      (
+        lambda: optional-spaces("\\"),
+        dot: optional-spaces("."),
+        comma: optional-spaces(","),
+      )
+    },
+    ident-list: {
+      // `star` matches 0 or more repetitions of a pattern.
+      // It is strongly recommended when possible to use
+      // repetition operators (`star`, `iter`, `maybe`) rather
+      // than recursive rules.
+      pat(<ident>, star(<comma>, <ident>))
+      rw(ids => ids.flatten())
+      //yy(`x`)
+      //yy(`x, y, z`)
+      //nn(`x, y,`)
+    },
+    atom: {
+      // A single rule may consist of multiple separate `pat`.
+      // They will be treated as if there was a `fork`,
+      // but with more freedom on which `rw` applies to each.
+      pat(<ident>)
+      rw(id => (id: id)) // This `rw` applies only to the `pat` above.
+      // `$$` introduces a commit point: if we go that far
+      // then backtracking is disabled. This can improve performance
+      // and the quality of error messages.
+      pat(drop("("), $$, <blank>, <expr>, <blank>, drop(")"))
+      //yy(`x`, `(x)`)
+      //yy(`((((((x))))))`)
+      //nn(`(x`)
+      //nn(`x y`)
+    },
+    app-expr: {
+      // `try` is the inverse of `$$` and re-enables backtracking.
+      pat(<app-expr>, <whitespace>, try(<atom>))
+      rw(atoms => (app: atoms.flatten()))
+      pat(<atom>)
+      yy(`x`, `x y z`, `x (y z)`)
+    },
+    lambda-expr: {
+      // Rules are allowed to be self-recursive,
+      // but make sure that they always consume at least one token
+      // before looping.
+      pat(<lambda>, $$, <ident-list>, <dot>, <lambda-expr>)
+      rw(((ids, body),) => (args: ids, body: body))
+      pat(<app-expr>)
+      yy(`\x.y`, `\x.\y.z`, `\x,y.(x ((\z.z) y))`)
+    },
+    expr: {
+      pat(<lambda-expr>)
+    }
+  )
+}
+
+// This runs all the unit tests (`yy` and `nn`) defined above
+// and displays a global tally.
+#kleene.test(grammar)
+
