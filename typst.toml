@@ -12,4 +12,4 @@ repository = "https://github.com/Vanille-N/kleene"
 keywords = ["parser", "parsing", "peg"]
 categories = ["text", "scripting"]
 
-exclude = []
+exclude = ["*.png"]
