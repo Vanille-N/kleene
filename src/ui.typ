@@ -1,26 +1,26 @@
 #import "match.typ"
+#import "analyze.typ"
 
-/// #property-priv()
-/// Transforms a string to show invisible characters (spaces, linebreaks, tabs).
-/// Returns the resulting text as a #typ.raw block.
-/// -> content
+// Transforms a string to show invisible characters (spaces, linebreaks, tabs).
+// Returns the resulting text as a #typ.raw block.
+// -> content
 #let show-invisible(
-  /// Input text to transform.
-  /// -> str
+  // Input text to transform.
+  // -> str
   line,
-  /// By default, linebreaks (```typc "\n"```) are replaced by a substitute character.
-  /// If this option is enabled, the formatted text will still have
-  /// the original linebreaks in addition to the marker.
-  /// -> bool
+  // By default, linebreaks (```typc "\n"```) are replaced by a substitute character.
+  // If this option is enabled, the formatted text will still have
+  // the original linebreaks in addition to the marker.
+  // -> bool
   preserve-linebreaks: false,
-  /// Which color the special characters should be shown as.
-  /// -> color
+  // Which color the special characters should be shown as.
+  // -> color
   dim-color: black.lighten(70%),
-  /// Determines the substitution dictionary to use.
-  /// - ```typc "special"```: `\n` and `\t`.
-  /// - ```typc "unicode"```: `¤`, `»`, `␣`, `∅` denote respectively
-  ///   linebreak, tab, space, eof.
-  /// -> str
+  // Determines the substitution dictionary to use.
+  // - ```typc "special"```: `\n` and `\t`.
+  // - ```typc "unicode"```: `¤`, `»`, `␣`, `∅` denote respectively
+  //   linebreak, tab, space, eof.
+  // -> str
   mode: "special",
 ) = {
   let dicts = (
@@ -51,22 +51,22 @@
   }).join()
 }
 
-/// Runs the unit tests attached to a grammar
-/// See @cmd:prelude:yy and @cmd:prelude:nn for details.
-/// Runs all positive and negative tests, and formats them in a table.
-/// -> content
+// Runs the unit tests attached to a grammar
+// See @cmd:prelude:yy and @cmd:prelude:nn for details.
+// Runs all positive and negative tests, and formats them in a table.
+// -> content
 #let check-unit-tests(
-  /// The grammar to test, as constructed by @cmd:kleene:grammar.
-  /// -> grammar
+  // The grammar to test, as constructed by @cmd:kleene:grammar.
+  // -> grammar
   grammar,
-  /// Left recursion analysis
-  /// -> dictionary
+  // Left recursion analysis
+  // -> dictionary
   lrec: none,
-  /// Pass an array or a function to filter a subset of the tests.
-  /// -> auto | array | function
+  // Pass an array or a function to filter a subset of the tests.
+  // -> auto | array | function
   select: auto,
-  /// Whether to display the final tally of passed/failed tests.
-  /// -> bool
+  // Whether to display the final tally of passed/failed tests.
+  // -> bool
   total: true,
 ) = {
   import "parse.typ": parse
@@ -147,7 +147,7 @@
       if type(select) == function and not select(ruleid) { continue }
     }
     if type(rule) != dictionary {
-      panic(rule)
+      panic("Rule is incorrectly constructed :" + repr(rule))
     }
     if rule.yy != () {
       table(columns: (2fr, auto, 5fr),
@@ -196,119 +196,6 @@
   }
 }
 
-#let inverse-reachable-set(grammar, start) = {
-  let one-step(pat) = {
-    if "lab" in pat {
-      (pat.lab,)
-    } else if "pats" in pat {
-      for pat in pat.pats {
-        one-step(pat)
-      }
-    } else if "pat" in pat {
-      one-step(pat.pat)
-    } else {
-      ()
-    }
-  }
-  let step = (:)
-  for (ruleid, rule) in grammar {
-    step.insert(ruleid, one-step(rule.pat))
-  }
-  let reach = start
-  while true {
-    let new = ()
-    for (ruleid, _) in grammar {
-      if ruleid not in reach {
-        for next in step.at(ruleid) {
-          if next in reach {
-            reach.push(ruleid)
-            new.push(ruleid)
-            break
-          }
-        }
-      }
-    }
-    if new == () {
-      break
-    }
-  }
-  reach
-}
-
-#let check-empty(
-  grammar,
-) = {
-  let _and(l, r) = {
-    if l == false or r == false {
-      false
-    } else if l == true {
-      r
-    } else if r == true {
-      l
-    } else {
-      none
-    }
-  }
-  let _or(l, r) = {
-    if l == true or r == true {
-      true
-    } else if l == false {
-      r
-    } else if r == false {
-      l
-    } else {
-      none
-    }
-  }
-  let known-nonempty(pat, known) = {
-    if "lab" in pat {
-      known.at(pat.lab, default: none)
-    } else if pat.call == match.regex {
-      let re = std.regex(pat.arg)
-      if "".starts-with(re) {
-        false
-      } else {
-        true
-      }
-    } else if pat.call in (match.star, match.commit, match.maybe, match.peek, match.neg, match.eof) {
-      false
-    } else if pat.call == match.str {
-      pat.arg != ""
-    } else if pat.call == match.fork {
-      let ans = true
-      for sub in pat.pats {
-        ans = _and(ans, known-nonempty(sub, known))
-      }
-      ans
-    } else if pat.call == match.seq {
-      let ans = false
-      for sub in pat.pats {
-        ans = _or(ans, known-nonempty(sub, known))
-      }
-      ans
-    } else if pat.call in (match.rewrite, match.iter, match.drop, match.try) {
-      known-nonempty(pat.pat, known)
-    } else {
-      panic(pat)
-    }
-  }
-  let emps = (:)
-  while true {
-    let new = ()
-    for (id, rule) in grammar {
-      if emps.at(id, default: none) == none {
-        let nonempty = known-nonempty(rule.pat, emps)
-        emps.insert(id, nonempty)
-        new.push(id)
-      }
-    }
-    if new == () {
-      break
-    }
-  }
-  emps
-}
-
 #let show-empty(grammar, nonempty) = {
   let tab = ((), (), ())
   for (id, _) in grammar {
@@ -330,95 +217,6 @@
         }
       }
     )
-  )
-}
-
-#let check-leftrec(grammar, nonempty) = {
-  let next-left(pat) = {
-    if "lab" in pat {
-      if nonempty.at(pat.lab) == true {
-        ((pat.lab,), false)
-      } else {
-        ((pat.lab,), true)
-      }
-    } else if pat.call == match.regex {
-      let re = std.regex(pat.arg)
-      if "".starts-with(re) {
-        ((), true)
-      } else {
-        ((), false)
-      }
-    } else if pat.call == match.str {
-      if pat.arg != "" {
-        ((), false)
-      } else {
-        ((), true)
-      }
-    } else if pat.call == match.fork {
-      let ans = ()
-      let after = true
-      for sub in pat.pats {
-        let (also, go-on) = next-left(sub)
-        ans += also
-        after = after or go-on
-      }
-      (ans, after)
-    } else if pat.call == match.seq {
-      let ans = ()
-      for sub in pat.pats {
-        let (also, go-on) = next-left(sub)
-        ans += also
-        if not go-on {
-          return (ans, false)
-        }
-      }
-      (ans, true)
-    } else if pat.call in (match.commit,) {
-      ((), true)
-    } else if pat.call in (match.maybe, match.peek, match.neg, match.star) {
-      let (ans, _) = next-left(pat.pat)
-      (ans, true)
-    } else if pat.call in (match.eof,) {
-      ((), false)
-    } else if pat.call in (match.rewrite, match.iter, match.drop, match.try) {
-      next-left(pat.pat)
-    } else {
-      panic(pat)
-    }
-  }
-
-  let next = (:)
-  for (id, rule) in grammar {
-    let (nl, _) = next-left(rule.pat)
-    next.insert(id, nl)
-  }
-  let chains = ()
-  for (id, nxs) in next {
-    for nx in nxs {
-      chains.push((id, nx))
-    }
-  }
-  let cycles = ()
-  while true {
-    let new = ()
-    for c in chains {
-      if c.first() == c.last() {
-        cycles.push(c)
-      } else if c.last() in c.slice(0, -1) {
-      } else {
-        for nx in next.at(c.last()) {
-          new.push((..c, nx))
-        }
-      }
-    }
-    chains = new
-    if new == () {
-      break
-    }
-  }
-  (
-    cycles: cycles,
-    dangerous: inverse-reachable-set(grammar, cycles.flatten()),
   )
 }
 
@@ -448,9 +246,9 @@
   /// -> bool
   total: true,
 ) = {
-  let empty = check-empty(grammar)
+  let empty = analyze.check-empty(grammar)
   show-empty(grammar, empty)
-  let lrec = check-leftrec(grammar, empty)
+  let lrec = analyze.check-leftrec(grammar, empty)
   show-leftrec(lrec)
   check-unit-tests(grammar, lrec: lrec, select: select, total: total)
 }
