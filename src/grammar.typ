@@ -66,19 +66,17 @@
     panic("Must specify at least one root for trim")
   }
   let explore-pat(pat) = {
-    let reach = ()
     if "lab" in pat {
-      reach.push(pat.lab)
+      (pat.lab,)
     } else if "pat" in pat {
-      reach += explore-pat(pat.pat)
+      explore-pat(pat.pat)
     } else if "pats" in pat {
       for sub in pat.pats {
-        reach += explore-pat(sub)
+        explore-pat(sub)
       }
     } else {
-      // this is a leaf
+      () // this is a leaf
     }
-    reach
   }
   let reach = ()
   let stack = (roots,).flatten()

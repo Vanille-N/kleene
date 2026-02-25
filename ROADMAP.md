@@ -1,8 +1,8 @@
-- ranges as [a-z] and [^\n]
-- ability to emit custom error messages
-  - err(msg) constructor
 - show invisible characters (ok except newline in "can't match string")
 - overall, all error messages should be more informative
-- on extend/patch,
-  - delete unused rule
 - inverse of $$ as a non-functional notation
+  - [?] maybe
+  - or $/$
+- reachability analysis
+- test coverage report
+- refactor bigly
