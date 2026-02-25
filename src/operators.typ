@@ -118,7 +118,6 @@
   }
 }
 
-
 /// Matches 1 or more instances of the inner pattern.
 /// Returns an #typ.t.array.
 ///
@@ -240,6 +239,17 @@
   } else {
     panic(`transformation must be a function, none, or auto`)
   }
+}
+
+/// Turns a matching pattern into a custom error.
+/// -> function(..pattern) => pattern
+#let error(
+  /// Message to emit in case of match.
+  /// -> content
+  msg,
+) = (..pats) => {
+  let pat = auto-seq(..pats)
+  (call: match.error, msg: msg, pat: pat)
 }
 
 /// Positive lookahead: matches a pattern without consuming the input.

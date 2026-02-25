@@ -19,6 +19,12 @@
       }
       rule.pat.push(ops.rewrite(elt.rw)(ops.auto-fork(..dangling-pats)))
       dangling-pats = ()
+    } else if "err" in elt {
+      if dangling-pats == () {
+        panic("This instance of 'err' does not apply to any patterns")
+      }
+      rule.pat.push(ops.error(elt.err)(ops.auto-fork(..dangling-pats)))
+      dangling-pats = ()
     } else if "yy" in elt {
       rule.yy.push(elt)
     } else if "nn" in elt {

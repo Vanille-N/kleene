@@ -25,6 +25,16 @@
   ((rw: fun),)
 }
 
+/// Triggers a custom error if the previous rule matches.
+/// -> rule
+#let err(
+  /// Error message to emit.
+  /// -> content
+  msg,
+) = {
+  ((err: msg),)
+}
+
 /// Declares one or more positive unit tests.
 /// They must parse correctly and pass validation.
 /// See @tests for details.

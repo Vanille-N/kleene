@@ -6,5 +6,5 @@
 
 #import "operators.typ": label, star, regex, iter, fork, drop, eof, maybe, rewrite, peek, neg, try
 
-#import "builders.typ": pat, yy, nn, rw
+#import "builders.typ": pat, yy, nn, rw, err
 

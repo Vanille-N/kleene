@@ -266,3 +266,18 @@
   )
 }
 
+#let error(
+  msg: auto,
+  pat: auto,
+) = (subparse, input) => {
+  stackframe.pause(subparse)(pat, input)()(
+    ans => {
+      if ans.ok {
+        (ok: false, backtrack: false, msg: msg, rest: input)
+      } else {
+        (ok: false, backtrack: true, msg: [No match], next: none, rest: input)
+      }
+    }
+  )
+}
+
