@@ -1,31 +1,31 @@
 #import "stackframe.typ"
 
-#let commit() = (subparse, stack, input) => {
+#let commit() = (subparse, input) => {
   (ok: true, backtrack: false, next: none, rest: input)
 }
 
-#let eof() = (subparse, stack, input) => {
+#let eof() = (subparse, input) => {
   if input == "" {
     (ok: true, backtrack: true, next: none, rest: input)
   } else {
-    (ok: false, backtrack: true, msg: [Expected end of stream], next: none, stack: stack, rest: input)
+    (ok: false, backtrack: true, msg: [Expected end of stream], next: none, rest: input)
   }
 }
 
 #let regex(
   arg: auto,
 ) = {
-  let re = std.regex(arg)
-  (subparse, stack, input) => {
-    if input.starts-with(re) {
-      let match = input.find(re)
+  let re = std.regex("^" + arg)
+  (subparse, input) => {
+    let match = input.find(re)
+    if match != none {
       let len = match.len()
       let rest = input.slice(len)
       let next = (
-        ok: false, backtrack: true, msg: [No longer part of the regex match '#raw(arg)'], stack: stack, rest: rest)
+        ok: false, backtrack: true, msg: [No longer part of the regex match '#raw(arg)'], rest: rest)
       (ok: true, backtrack: true, val: match, next: next, rest: rest)
     } else {
-      (ok: false, backtrack: true, msg: [Regex '#raw(arg)' does not match], next: none, stack: stack, rest: input)
+      (ok: false, backtrack: true, msg: [Regex '#raw(arg)' does not match], next: none, rest: input)
     }
   }
 }
@@ -33,7 +33,7 @@
 #let seq(
   pats: auto,
   array: true,
-) = (subparse, stack, input) => {
+) = (subparse, input) => {
   let step(env) = {
     if env.pats.len() > 0 {
       let pat = env.pats.pop()
@@ -74,17 +74,17 @@
 
 #let str(
   arg: auto,
-) = (subparse, stack, input) => {
+) = (subparse, input) => {
   if input.starts-with(arg) {
     (ok: true, backtrack: true, val: arg, next: none, rest: input.slice(arg.len()))
   } else {
-    (ok: false, backtrack: true, msg: [Can't match string "#std.raw(arg)"], next: none, stack: stack, rest: input)
+    (ok: false, backtrack: true, msg: [Can't match string "#std.raw(arg)"], next: none, rest: input)
   }
 }
 
 #let iter(
   pat: auto,
-) = (subparse, stack, input) => {
+) = (subparse, input) => {
   let step(env) = {
     stackframe.pause(subparse)(pat, env.input)(env)(
       (ans, env) => {
@@ -123,7 +123,7 @@
 
 #let star(
   pat: auto,
-) = (subparse, stack, input) => {
+) = (subparse, input) => {
   let step(env) = {
     stackframe.pause(subparse)(pat, env.input)(env)(
       (ans, env) => {
@@ -153,7 +153,7 @@
 
 #let fork(
   pats: auto,
-) = (subparse, stack, input) => {
+) = (subparse, input) => {
   let step(env) = {
     if env.pats.len() > 0 {
       let pat = env.pats.pop()
@@ -178,7 +178,7 @@
     }
   }
   let env = (
-    latest-msg: (ok: false, backtrack: true, stack: stack, msg: [Empty rule], next: none, rest: input),
+    latest-msg: (ok: false, backtrack: true, msg: [Empty rule], next: none, rest: input),
     backtrack: true,
     pats: pats.rev(),
   )
@@ -187,7 +187,7 @@
 
 #let maybe(
   pat: auto,
-) = (subparse, stack, input) => {
+) = (subparse, input) => {
   stackframe.pause(subparse)(pat, input)()(
     ans => {
       if ans.ok {
@@ -203,7 +203,7 @@
 
 #let try(
   pat: auto,
-) = (subparse, stack, input) => {
+) = (subparse, input) => {
   stackframe.pause(subparse)(pat, input)()(
     ans => {
       (: ..ans, backtrack: true)
@@ -213,7 +213,7 @@
 
 #let drop(
   pat: auto,
-) = (subparse, stack, input) => {
+) = (subparse, input) => {
   stackframe.pause(subparse)(pat, input)()(
     ans => {
       if "val" in ans {
@@ -227,7 +227,7 @@
 #let rewrite(
   fun: auto,
   pat: auto,
-) = (subparse, stack, input) => {
+) = (subparse, input) => {
   stackframe.pause(subparse)(pat, input)()(
     ans => {
       if "val" in ans {
@@ -240,11 +240,11 @@
 
 #let peek(
   pat: auto,
-) = (subparse, stack, input) => {
+) = (subparse, input) => {
   stackframe.pause(subparse)(pat, input)()(
     ans => {
       if ans.ok {
-        (ok: true, backtrack: ans.backtrack, next: [Successful lookahead of length #{input.len() - ans.rest.len()}], stack: stack, rest: input)
+        (ok: true, backtrack: ans.backtrack, next: none, rest: input)
       } else {
         ans
       }
@@ -254,13 +254,13 @@
 
 #let neg(
   pat: auto,
-) = (subparse, stack, input) => {
+) = (subparse, input) => {
   stackframe.pause(subparse)(pat, input)()(
     ans => {
       if ans.ok {
-        (ok: false, backtrack: ans.backtrack, msg: [Lookahead of length #{input.len() - ans.rest.len()} should have failed], stack: stack, rest: input)
+        (ok: false, backtrack: ans.backtrack, msg: [Lookahead of length #{input.len() - ans.rest.len()} should have failed], rest: input)
       } else {
-        (ok: true, backtrack: ans.backtrack, next: [Lookahead of length #{input.len() - ans.rest.len()} failed as expected], stack: stack, rest: input)
+        (ok: true, backtrack: ans.backtrack, next: none, rest: input)
       }
     }
   )

@@ -17,7 +17,14 @@
     id = select
   }
   let call = id.remove("call")
-  stackframe.tailcall(call(..id))(_subparse(rules, stack), stack, input)
+  stackframe.pause(call(..id))(_subparse(rules, stack), input)(stack)(
+    (ans, stack) => {
+      if "stack" not in ans {
+        ans.stack = stack
+      }
+      ans
+    }
+  )
 }
 
 #let subparse(..args) = stackframe.run(_subparse(..args))

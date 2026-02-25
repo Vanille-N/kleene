@@ -322,16 +322,16 @@
   })
 }
 
-#let error-inner(input, ans) = {
+#let error-inner(input, ans, fallback-stack: none) = {
   if "msg" not in ans {
-    panic(ans)
+    panic("No error message to print", ans)
   }
-  if "stack" not in ans {
-    panic(ans)
+  if "stack" not in ans and fallback-stack == none {
+    panic("Lost track of the recursive stack", ans)
   }
   box[
     #show-span(input, input.len() - ans.rest.len(), msg: ans.msg) \
-    While trying to parse: #{ans.stack.map(s => raw("<" + str(s) + ">")).join[ $->$ ]}.
+    While trying to parse: #{ans.at("stack", default: fallback-stack).map(s => raw("<" + str(s) + ">")).join[ $->$ ]}.
   ]
 }
 
@@ -354,7 +354,8 @@
       }
       if ans.next != none [
       Hint: halted due to the following: \
-      #error-inner(input, ans.next)
+      #error-inner(input, ans.next, fallback-stack: ans.stack)
     ]}
   ]
 }
+
