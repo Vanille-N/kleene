@@ -6,3 +6,7 @@
 - reachability analysis
 - test coverage report
 - refactor bigly
+- add a common.typ with builtin combinators
+  - separated with/without trailing
+  - whitespace
+  - comment styles

@@ -51,7 +51,7 @@
   table(columns: (frac, 100% - frac), stroke: none, l, r)
 }
 
-#show: revised.highlight-outline-entries
+#revised.is-outline.update(true)
 
 // @scrybe(skip 1; grep {{version}})
 #let versions = (
@@ -125,10 +125,11 @@
     #colbreak()
   ],
 )
+#revised.is-outline.update(false)
 
 = Quick start
 
-== Skeleton
+== #revised.minor[Skeleton]
 
 At minimum, using KLEENE takes the following form:
 
@@ -433,7 +434,7 @@ the first of `pattern`, `pattern2`, ... that has a successful match.
 )
 ```)
 
-=== Hint <pat-hint>
+=== #revised.new[Hint] <pat-hint>
 
 In the specific case where the expected result of a @cmd:prelude:fork is identifiable
 by a prefix, you can use @cmd:prelude:hint instead to reduce the amount of backtracking.
@@ -705,6 +706,13 @@ that actually does consume input, and the lookahead only serves as a guard.
 ```typc peek(pat)``` introduces a positive lookahead: it will try to match `pat`,
 but even if it succeeds it will not consume any input.
 If multiple patterns are provided, they are implicitly cast to a @cmd:prelude:seq.
+
+#info-alert[
+  @cmd:prelude:peek serves a completely different purpose than @cmd:prelude:hint,
+  as the latter's only purpose is to improve performance with a fixed-length lookahead,
+  while the former can do arbitrary lookaheads.
+]
+
 For example here is an example where a lookahead determines if we parse
 a string as a key or as a value:
 
@@ -1018,7 +1026,7 @@ of expressions, as below:
 )
 ```)
 
-== Avoiding left recursion <leftrec>
+== #revised.new[Avoiding left recursion] <leftrec>
 
 One might be tempted to write a left-associative rule as below,
 but that would introduce a null-cycle: the rule recurses back onto itself
@@ -1053,7 +1061,7 @@ if you really need your AST to be binary.
 Unless explicitly marked `private`, the functions in this module are available directly
 as ```typc kleene.function(..)```.
 
-=== Parsing
+=== #revised.breaking[Parsing]
 #show-module("parse", module: "kleene")
 
 === Grammar builders
@@ -1063,7 +1071,7 @@ as ```typc kleene.function(..)```.
 === Running tests
 #show-module("ui", module: "kleene")
 
-== Pattern combinators
+== #revised.minor[Pattern combinators]
 
 #custom-type("pattern", color: purple.lighten(70%))
 #show-module("operators", module: "prelude")
