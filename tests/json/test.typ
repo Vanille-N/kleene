@@ -27,7 +27,7 @@
     },
     string: {
       pat(drop("\""), $$, star(fork(`[^\\"]+`, <special>)), drop("\""))
-      rw(s => "" + s.join())
+      rw(s => s.join(default: ""))
       yy(`""`, validate: (_,v) => if v != "" { repr(v) })
       yy(`"foo"`)
       yy(`"a\\b"`, `"a\"b"`, `"a\n"`, `"a\tb"`, `"a\uf1ecb"`)

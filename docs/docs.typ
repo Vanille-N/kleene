@@ -190,7 +190,7 @@ At minimum, using KLEENE takes the following form:
   ]
 }
 
-For example, here is a very simple grammar that will simply look for the
+For example, here is a very simple grammar that will look for the
 string `"foo"`:
 
 #test-example(```typ
@@ -198,7 +198,7 @@ string `"foo"`:
     // This defines a rule <main>
     main: {
       // Each `pat` gives one possible form of the match, here the
-      // literal string "main"
+      // literal string "foo"
       pat("foo")
     }
   )

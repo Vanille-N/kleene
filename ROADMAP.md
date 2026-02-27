@@ -7,6 +7,8 @@
 - test coverage report
 - refactor bigly
 - add a common.typ with builtin combinators
-  - separated with/without trailing
+  - separated with/without trailing, empty/nonempty
   - whitespace
   - comment styles
+    - including nested block comments!!!
+  - strings with escape characters

@@ -93,7 +93,13 @@
     for (k, v2) in g2 {
       if k in g {
         let v = g.remove(k)
-        v.pat += v2.pat
+        if v.pat != () {
+          if v2.pat != () {
+            v.pat += v2.pat
+          }
+        } else {
+          v.pat = v2.pat
+        }
         v.yy += v2.yy
         v.nn += v2.nn
         g.insert(k, v)
