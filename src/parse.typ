@@ -30,7 +30,7 @@
         ans.stack = stack
       }
       if "val" in ans {
-        for rw in rws {
+        for rw in rws.rev() {
           if rw == none {
             let _ = ans.remove("val")
             break
