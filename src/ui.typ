@@ -117,24 +117,24 @@
 
 
     let incr = ()
-    let (ok, ans) = parse(grammar, label(ruleid), tt.text)
-    if ok == expect {
+    let ans = parse(grammar, label(ruleid), tt.text)
+    if ans.ok == expect {
       incr.push("ok")
     } else {
       incr.push("err")
     }
-     let validated = if validate != auto {
+    let validated = if validate != auto {
       incr.push("validation-required")
-      if ok == expect {
+      if ans.ok == expect {
         incr.push("validated")
-        validate(tt.text, ans)
+        validate(tt.text, if ans.ok { ans.val } else { ans.msg })
       }
     }
 
     let rowspan = 1
     let line1 = (
-      status(ok, expect: expect),
-      [#ans],
+      status(ans.ok, expect: expect),
+      [#if ans.ok { ans.val } else { ans.msg }],
     )
     let line2 = if validated != none {
       incr.push("invalid")

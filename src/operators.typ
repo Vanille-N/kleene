@@ -290,7 +290,19 @@
   (call: match.neg, pat: pat)
 }
 
-#let hint(len, mapping) = {
+/// Fixed-length lookahead to determine which branch to take.
+///
+/// See: @pat-hint.
+/// -> pattern
+#let hint(
+  /// How many characters to look ahead to determine the branch.
+  /// -> int
+  len,
+  /// Dictionary with keys of length `len` that decide which pattern to
+  /// pick. A default can be provided with the key `__`.
+  /// -> dictionary
+  mapping,
+) = {
   assert(len >= 1)
   for (k, v) in mapping {
     mapping.at(k) = auto-cast(mapping.at(k))

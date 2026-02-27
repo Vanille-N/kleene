@@ -1,5 +1,6 @@
 #import "/src/operators.typ" as ops
 #import "match.typ"
+#import "analyze.typ"
 
 #let combine(id, descr) = {
   let rule = (pat: (), yy: (), nn: ())
@@ -65,38 +66,8 @@
   if roots == none {
     panic("Must specify at least one root for trim")
   }
-  let explore-pat(pat) = {
-    if "lab" in pat {
-      (pat.lab,)
-    } else if "pat" in pat {
-      explore-pat(pat.pat)
-    } else if "pats" in pat {
-      for sub in pat.pats {
-        explore-pat(sub)
-      }
-    } else {
-      () // this is a leaf
-    }
-  }
-  let reach = ()
-  let stack = (roots,).flatten()
-  while stack.len() > 0 {
-    let root = stack.pop()
-    if str(root) not in grammar {
-      panic(str(root) + " is not a declared rule: the grammar is not closed")
-    }
-    if root in reach {
-      // noop: already explored
-    } else {
-      reach.push(root)
-      let sub = explore-pat(grammar.at(str(root)).pat)
-      for label in sub {
-        if label not in reach {
-          stack.push(label)
-        }
-      }
-    }
-  }
+  roots = (roots,).flatten()
+  let reach = analyze.reachable-closure(grammar, roots.map(str))
   for (id, _) in grammar {
     if id not in reach {
       let _ = grammar.remove(id)

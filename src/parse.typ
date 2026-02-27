@@ -49,12 +49,11 @@
 #let subparse(..args) = stackframe.run(_subparse(..args))
 
 /// Initiate parsing.
-/// Returns a boolean and a result.
-/// The boolean indicates if the parsing is successful.
-/// It also determines the type of the result:
-/// - whatever type is returned by the last rewriting function in the case of a success,
-/// - content that can be directly displayed for an error message in the case of a failure.
-/// -> (bool, result)
+/// Returns a dictionary of the result.
+/// The boolean `ok` indicates if the parsing is successful.
+/// If #typ.v.true, then `val` contains the last produced value.
+/// Otherwise `msg` contains the error message in a manner than can be displayed.
+/// -> (ok: bool, val: any, msg: content)
 #let parse(
   /// Typically constructed by @cmd:kleene:grammar.
   /// -> grammar
@@ -69,12 +68,12 @@
   let ans = subparse(rules, ())(ops.auto-cast(pat), input)
   if not ans.ok {
     import "ui.typ"
-    (false, ui.error(input, pat, ans))
+    (ok: false, val: none, msg: ui.error(input, pat, ans))
   } else if ans.rest != "" {
     import "ui.typ"
-    (false, ui.incomplete(input, pat, ans))
+    (ok: false, val: none, msg: ui.incomplete(input, pat, ans))
   } else {
-    (true, ans.at("val", default: none))
+    (ok: true, val: ans.at("val", default: none), msg: none)
   }
 }
 

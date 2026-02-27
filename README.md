@@ -5,15 +5,16 @@ A parser combinator in pure Typst.
 ----
 
 <!-- @scrybe(not version; panic Please specify a version number) -->
-<!-- @scrybe(if publish; grep https; grep {{version}}) -->
+<!-- @scrybe(jump https; grep {{version}}) -->
+<!-- @scrybe(if publish; grep https) -->
 [Full documentation here.](docs/docs.pdf)
-<!-- [Full documentation here.](https://github.com/Vanille-N/kleene/releases/download/v0.1.0/docs.pdf) -->
+<!-- [Full documentation here.](https://github.com/Vanille-N/kleene/releases/download/v0.2.0/docs.pdf) -->
 
 The skeleton of a Kleene invocation is as follows:
 <!-- @scrybe(not publish; jump import; grep local; grep {{version}}) -->
 <!-- @scrybe(if publish; jump import; grep preview; grep {{version}}) -->
 ```typ
-#import "@local/kleene:0.1.0"
+#import "@local/kleene:0.2.0"
 
 #let grammar = {
   // kleene.prelude contains all the operators, which we usually
@@ -35,7 +36,9 @@ The skeleton of a Kleene invocation is as follows:
 // The result is a tuple where the first boolean indicates if the parsing
 // was successful, and the second value is either the parsed output
 // or an error message.
-#let (ok, ans) = kleene.parse(grammar, <main>, "..")
+#let ans = kleene.parse(grammar, <main>, "..")
+#assert(ans.ok)
+#ans.val
 ```
 
 In more detail,
@@ -44,7 +47,7 @@ In more detail,
 <!-- @scrybe(if publish; jump import; grep preview; grep {{version}}) -->
 <!-- @scrybe(jump import; until ```; diff tests/demo/test.typ) -->
 ```typ
-#import "@local/kleene:0.1.0"
+#import "@local/kleene:0.2.0"
 
 // This grammar parses lambda-terms.
 // See: https://en.wikipedia.org/wiki/Lambda_calculus
@@ -152,15 +155,15 @@ In more detail,
 
 // Now you can parse arbitrary expressions!
 // A success will return a pair (true, result)
-#let (ok, ans) = parse-lambda("\x. \y. y x")
-#assert(ok)
-#ans
+#let ans = parse-lambda("\x. \y. y x")
+#assert(ans.ok)
+#ans.val
 
 // A failure will return a pair (false, error)
 // in which you can print the error message to get more details.
-#let (ok, ans) = parse-lambda("\x. \y y x")
-#assert(not ok)
-#ans
+#let ans = parse-lambda("\x. \y y x")
+#assert(not ans.ok)
+#ans.msg
 ```
 
 ![Unit tests: page 1 of 2](tests/demo/ref/1.png)

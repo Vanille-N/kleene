@@ -55,6 +55,7 @@
 
 // @scrybe(skip 1; grep {{version}})
 #let versions = (
+  "0.2.0",
   "0.1.0",
 )
 
@@ -95,6 +96,7 @@
     *Versions*
     - #link(repo)[`dev`]
     #{
+      show "0.1.0": it => text(fill: red)[#it (unpublished)]
       for (i, ver) in versions.enumerate() [
         - #link(repo + "releases/tag/v" + ver)[#raw(ver)]
           #{if i == 0 {
@@ -105,7 +107,6 @@
     //- #link(repo + "releases/")[...]
 
     #colbreak()
-    /*
     #place(box(width: 100%, height: 100%)[
       #place(bottom + right, dx: 1.5cm)[
         #box(width: 6.6cm, stroke: gray, radius: 5mm, inset: 5mm)[
@@ -121,7 +122,6 @@
         ]
       ]
     ])
-    */
     #colbreak()
   ],
 )
@@ -135,7 +135,7 @@ At minimum, using KLEENE takes the following form:
 #codesnippet[
   // @scrybe(jump import; grep preview; grep {{version}})
   ```typ
-  #import "@preview/kleene:0.1.0"
+  #import "@preview/kleene:0.2.0"
 
   #let grammar = {
     // kleene.prelude contains all the operators, which we usually
@@ -155,7 +155,9 @@ At minimum, using KLEENE takes the following form:
   #kleene.test(grammar)
 
   // This is how to invoke the parser with <main> as the entry point.
-  #let (ok, ans) = kleene.parse(grammar, <main>, "..")
+  #let ans = kleene.parse(grammar, <main>, "..")
+  #assert(ans.ok)
+  #ans.val
   ```
 ]
 
@@ -201,14 +203,14 @@ string `"foo"`:
   )
 
   // In case of success, the result is a pair (true, value)
-  #let (ok, ans) = kleene.parse(grammar, <main>, "foo")
-  #assert(ok)
-  #ans
+  #let ans = kleene.parse(grammar, <main>, "foo")
+  #assert(ans.ok)
+  #ans.val
 
   // In case of failure, the result is a pair (false, error-message)
-  #let (ok, ans) = kleene.parse(grammar, <main>, "bar")
-  #assert(not ok)
-  #ans
+  #let ans = kleene.parse(grammar, <main>, "bar")
+  #assert(not ans.ok)
+  #ans.msg
   ```, post: none)
 
 == Simple examples
@@ -220,6 +222,10 @@ To start with an easy example, let's write a parser of integers in base 10.
 We take the opportunity to demonstrate the use of @cmd:kleene:test to run the
 inline unit tests declared by @cmd:prelude:yy and @cmd:prelude:nn,
 as well as @cmd:prelude:rw to transform the parsed result post-matching.
+In the process, @cmd:kleene:test will also perform some static analysis on the
+grammar to detect which rules may match an empty input, whether any are
+missing or missing a definition, and warn about left recursion
+(see: @leftrec).
 
 #test-example(```typ
   #let grammar = kleene.grammar(
@@ -311,7 +317,7 @@ rules. To illustrate this, we add hexadecimal numbers to our parser.
 === Str <pat-str>
 
 ```typc str("..")``` matches the literal string ```typc ".."``` and returns the match.
-Any #typ.t.string is implicitly cast to `str`.
+Any #typ.t.string is implicitly cast to @cmd:prelude:str.
 
 #test-example(```typ
 #let grammar = kleene.grammar(
@@ -327,7 +333,7 @@ Any #typ.t.string is implicitly cast to `str`.
 
 ```typc regex("..")```, with ```typc ".."``` the same string you would pass to the standard
 function ```typc std.regex```, matches a regular expression.
-Any raw text (i.e., wrapped in ```typ `..` ```) is implicitly cast to `regex`.
+Any raw text (i.e., wrapped in ```typ `..` ```) is implicitly cast to @cmd:prelude:regex.
 
 #test-example(```typ
 #let grammar = kleene.grammar(
@@ -343,7 +349,7 @@ Any raw text (i.e., wrapped in ```typ `..` ```) is implicitly cast to `regex`.
 
 ```typc label("lab")``` recursively matches the rule named `lab`, which
 must be defined in the same grammar.
-Any #typ.t.label is implicitly cast to `label`.
+Any #typ.t.label is implicitly cast to @cmd:prelude:label.
 
 #test-example(```typ
 #let grammar = kleene.grammar(
@@ -360,16 +366,18 @@ Any #typ.t.label is implicitly cast to `label`.
 === Seq <pat-seq>
 
 ```typc seq(pattern1, pattern2, ..)``` matches the successive patterns `pattern1`, `pattern2`, ...
-one after the other. Any #typ.t.array is implicitly cast to a `seq`.
-Furthermore most other operators (`iter`, `star`, `maybe`, `drop`, `rewrite`, ...)
-are variadic and accept multiple arguments that are understood as a `seq`.
+one after the other. Any #typ.t.array is implicitly cast to a @cmd:prelude:seq.
+Furthermore most other operators (@cmd:prelude:iter, @cmd:prelude:star,
+@cmd:prelude:maybe, @cmd:prelude:drop, @cmd:prelude:rewrite, ...)
+are variadic and accept multiple arguments that are understood as a
+@cmd:prelude:seq.
 #info-alert[
-  An *explicit* call to `seq` will always return an array, even if it has
+  An *explicit* call to @cmd:prelude:seq will always return an array, even if it has
   only one element. Implicit calls however, such as those induced by
-  variadic `pat`, `iter`, ... may for convenience return a single element
-  rather than a singleton array.
+  variadic @cmd:prelude:pat, @cmd:prelude:iter, ... may for convenience return
+  a single element rather than a singleton array.
   In both cases the array returned by `seq` is pre-filtered to exclude elements
-  that are `none` (either ```typc eof()``` matches, or those that were dropped
+  that are `none` (either @cmd:prelude:eof matches, or those that were dropped
   as explained in @ghost-ops).
 ]
 
@@ -389,16 +397,15 @@ are variadic and accept multiple arguments that are understood as a `seq`.
 
 === Fork <pat-fork>
 
-```typc fork(pattern1, pattern2, ..)``` is the standard dual of `seq`, returning
+```typc fork(pattern1, pattern2, ..)``` returns
 the first of `pattern`, `pattern2`, ... that has a successful match.
 
 #warning-alert[
-  `fork` always returns the *first match* in the order provided,
-  rather than the longest match. As such `fork` does not commute.
+  @cmd:prelude:fork does not commute, the first pattern has priority.
 ]
 #info-alert[
-  `fork` is the only operator that may return objects of different
-  types. It is recommended that you insert the appropriate `rw` calls
+  @cmd:prelude:fork may return objects of different
+  types. It is recommended that you insert the appropriate @cmd:prelude:rw calls
   to be able to identify the provenance of the result.
 ]
 
@@ -425,6 +432,59 @@ the first of `pattern`, `pattern2`, ... that has a successful match.
   }
 )
 ```)
+
+=== Hint <pat-hint>
+
+In the specific case where the expected result of a @cmd:prelude:fork is identifiable
+by a prefix, you can use @cmd:prelude:hint instead to reduce the amount of backtracking.
+
+@cmd:prelude:hint will perform a fixed-length lookahead then branch based on the string.
+This is best used when a pattern has a fixed beginning marker.
+
+#test-example(````typ
+#let grammar = kleene.grammar(
+  // Let's consider a language where we have 3 kinds of str-like types
+  // with different markers, and integers.
+  dblstring: {
+    pat(drop("\""), `[^"]*`, drop("\""))
+    yy(`"foo"`)
+  },
+  quotestring: {
+    pat(drop("'"), `[^']*`, drop("'"))
+    yy(`'bar'`)
+  },
+  content: {
+    pat(drop("["), `[^]]*`, drop("]"))
+    yy(`[baz]`)
+  },
+  int: {
+    pat(`-?[0-9]+`)
+    rw(v => int(v))
+    yy(`42`)
+  },
+  value-naive: {
+    // The naive `fork` works, but each time we need to parse a <content>
+    // we will incur backtracking from the two earlier failed matches.
+    pat(fork(<dblstring>, <quotestring>, <content>, <int>))
+    yy(`"double"`, `'quoted'`, `[bracketed]`, `42`)
+    nn(`"unclosed`)
+  },
+  value: {
+    // More clever, we can perform a lookahead of length 1 and branch
+    // based on the value. This will result in less backtracking and better
+    // error messages.
+    pat(hint(1, (
+      "\"": <dblstring>,
+      "'": <quotestring>,
+      "[": <content>,
+      // Default case
+      __: <int>,
+    )))
+    yy(`"double"`, `'quoted'`, `[bracketed]`, `42`)
+    nn(`"unclosed`)
+  }
+)
+````)
 
 == Repetitions
 
@@ -958,9 +1018,33 @@ of expressions, as below:
 )
 ```)
 
-As a related limitation, PEG grammars are not suited to left-recursive rules
-(when the rule appears immediately at the left of itself without consuming any input).
-Prioritize using iteration instead.
+== Avoiding left recursion <leftrec>
+
+One might be tempted to write a left-associative rule as below,
+but that would introduce a null-cycle: the rule recurses back onto itself
+before consuming any input. Parsing would not terminate, so there are protections
+against this.
+#test-example(```typ
+#let grammar = kleene.grammar(
+  whitespace: {
+    pat(maybe(iter(" ")))
+    rw(none)
+  },
+  int: {
+    pat(iter(`[0-9]`))
+    rw(ds => int(ds.join()))
+  },
+  add-expr: {
+    pat(<add-expr>, drop("+"), <int>)
+    yy(`1 + 2 + 3`)
+  },
+)
+```)
+
+As shown in the previous section, the correct workaround is to use
+iteration operators, and then perhaps do some post-processing on the output
+if you really need your AST to be binary.
+
 
 = Public API
 

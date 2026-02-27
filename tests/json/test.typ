@@ -134,9 +134,10 @@
   for name in ("support-config", "support-package", "test-package", "package-lock") {
     let file = "examples/" + name + ".json"
     let theirs = std.json(file)
-    let (ok, mine) = parse-json(read(file))
+    let mine = parse-json(read(file))
+    assert(mine.ok)
 
-    assert(theirs == mine)
+    assert(theirs == mine.val)
   }
 }
 

@@ -106,12 +106,12 @@
 
 // Now you can parse arbitrary expressions!
 // A success will return a pair (true, result)
-#let (ok, ans) = parse-lambda("\x. \y. y x")
-#assert(ok)
-#ans
+#let ans = parse-lambda("\x. \y. y x")
+#assert(ans.ok)
+#ans.val
 
 // A failure will return a pair (false, error)
 // in which you can print the error message to get more details.
-#let (ok, ans) = parse-lambda("\x. \y y x")
-#assert(not ok)
-#ans
+#let ans = parse-lambda("\x. \y y x")
+#assert(not ans.ok)
+#ans.msg
