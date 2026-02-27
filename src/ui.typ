@@ -62,6 +62,9 @@
   // Left recursion analysis
   // -> dictionary
   lrec: none,
+  // Closure analysis
+  // -> dictionary
+  closed: none,
   // Pass an array or a function to filter a subset of the tests.
   // -> auto | array | function
   select: auto,
@@ -93,7 +96,7 @@
   let evaluate(ruleid, tt, expect: true, validate: auto) = {
     let input-box = box(fill: gray.lighten(90%), inset: 3pt)[#text(fill: blue)[#show-invisible(tt.text, mode: "unicode", preserve-linebreaks: true)]]
 
-    if lrec != none and ruleid in lrec.dangerous {
+    if (lrec != none and ruleid in lrec.dangerous) {
       let incr = ("skip",)
       let arr = (
         table.cell[#input-box],
@@ -102,6 +105,16 @@
       )
       return (incr, arr)
     }
+    if (closed != none and ruleid in closed.dangerous) {
+      let incr = ("skip",)
+      let arr = (
+        table.cell[#input-box],
+        status(false, skip: true),
+        [_Skipped due to gaps in grammar_],
+      )
+      return (incr, arr)
+    }
+
 
     let incr = ()
     let (ok, ans) = parse(grammar, label(ruleid), tt.text)
@@ -231,6 +244,24 @@
   }
 }
 
+#let show-closed(closed) = {
+  if closed.undef != () {
+    table(
+      columns: 2,
+      [*Placeholder rule found*], closed.undef.map(id => raw("<" + id + ">")).join([, ]),
+    )
+  }
+  if closed.dangling != () {
+    table(
+      columns: 2,
+      [*Not defined*], closed.dangling.map(id => raw("<" + id + ">")).join([, ]),
+    )
+  }
+  if closed.undef != () or closed.dangling != () {
+    [_The grammar is incomplete: some rules are undefined_]
+  }
+}
+
 /// Runs the unit tests attached to a grammar and a number of sanity checks.
 /// See @cmd:prelude:yy and @cmd:prelude:nn for details.
 /// Runs all positive and negative tests, and formats them in a table.
@@ -250,7 +281,9 @@
   show-empty(grammar, empty)
   let lrec = analyze.check-leftrec(grammar, empty)
   show-leftrec(lrec)
-  check-unit-tests(grammar, lrec: lrec, select: select, total: total)
+  let closed = analyze.check-closed(grammar)
+  show-closed(closed)
+  check-unit-tests(grammar, lrec: lrec, closed: closed, select: select, total: total)
 }
 
 #let extract-line(input, idx) = {
@@ -357,5 +390,10 @@
       #error-inner(input, ans.next, fallback-stack: ans.stack)
     ]}
   ]
+  /*
+  error-box[
+    #ans
+  ]
+  */
 }
 

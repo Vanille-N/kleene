@@ -4,7 +4,7 @@
 // Instead simply `#import kleene.prelude: *` in a local scope to have access
 // to all combinators and rule builders.
 
-#import "operators.typ": label, star, regex, iter, fork, drop, eof, maybe, rewrite, peek, neg, try
+#import "operators.typ": label, star, regex, iter, fork, drop, eof, maybe, rewrite, peek, neg, try, hint
 
 #import "builders.typ": pat, yy, nn, rw, err
 

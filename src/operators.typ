@@ -72,7 +72,6 @@
     str(pat)
   } else if type(pat) == array {
     (call: match.seq, pats: pat.map(auto-cast), array: true)
-    seq(..pat)
   } else if pat == $$ {
     commit()
   } else if type(pat) == content and pat.func() == std.raw {
@@ -208,7 +207,8 @@
   ..pats,
 ) = {
   let pat = auto-seq(..pats)
-  (call: match.drop, pat: pat)
+  pat.rw = none
+  pat
 }
 
 /// Currified so that common rewriting patterns can be conveniently
@@ -234,7 +234,15 @@
   } else if type(fun) == function {
     (..pats) => {
       let pat = auto-seq(..pats)
-      (call: match.rewrite, fun: fun, pat: pat)
+      if "rw" not in pat {
+        pat.rw = fun
+      } else if pat.rw != none {
+        let old = pat.rw
+        pat.rw = (x => fun(old(x)))
+      } else {
+        panic("Rewrite does not operate on rules that don't produce data")
+      }
+      pat
     }
   } else {
     panic(`transformation must be a function, none, or auto`)
@@ -280,5 +288,13 @@
 ) = {
   let pat = seq(array: false, ..pats)
   (call: match.neg, pat: pat)
+}
+
+#let hint(len, mapping) = {
+  assert(len >= 1)
+  for (k, v) in mapping {
+    mapping.at(k) = auto-cast(mapping.at(k))
+  }
+  (call: match.hint, len: len, mapping: mapping)
 }
 

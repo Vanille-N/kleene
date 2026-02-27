@@ -10,17 +10,36 @@
   if type(id) != dictionary {
     panic(id, stack)
   }
+  let rws = ()
   while "lab" in id {
     stack.push(id.lab)
+    if "rw" in id {
+      rws.push(id.rw)
+    }
     let rule = rules.at(id.lab)
     let select = rule.pat
     id = select
   }
   let call = id.remove("call")
+  if "rw" in id {
+    rws.push(id.remove("rw"))
+  }
   stackframe.pause(call(..id))(_subparse(rules, stack), input)(stack)(
     (ans, stack) => {
       if "stack" not in ans {
         ans.stack = stack
+      }
+      if "val" in ans {
+        for rw in rws {
+          if rw == none {
+            let _ = ans.remove("val")
+            break
+          } else if rw == auto {
+            panic("rw=auto should be elided at this stage")
+          } else {
+            ans.val = rw(ans.val)
+          }
+        }
       }
       ans
     }

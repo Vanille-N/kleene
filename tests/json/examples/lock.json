@@ -1,0 +1,192 @@
+{
+  "name": "lipu-tenpo-website",
+  "version": "0.1.0",
+  "lockfileVersion": 3,
+  "requires": true,
+  "packages": {
+    "": {
+      "name": "lipu-tenpo-website",
+      "version": "0.1.0",
+      "license": "ISC",
+      "devDependencies": {
+        "@11ty/eleventy": "^2.0.1",
+        "@11ty/eleventy-img": "^3.1.8",
+        "npm-run-all": "^4.1.5",
+        "surge": "^0.24.6"
+      }
+    },
+    "node_modules/@11ty/dependency-tree": {
+      "version": "2.0.1",
+      "resolved": "https://registry.npmjs.org/@11ty/dependency-tree/-/dependency-tree-2.0.1.tgz",
+      "integrity": "sha512-5R+DsT9LJ9tXiSQ4y+KLFppCkQyXhzAm1AIuBWE/sbU0hSXY5pkhoqQYEcPJQFg/nglL+wD55iv2j+7O96UAvg==",
+      "dev": true
+    },
+    "node_modules/@11ty/eleventy": {
+      "version": "2.0.1",
+      "resolved": "https://registry.npmjs.org/@11ty/eleventy/-/eleventy-2.0.1.tgz",
+      "integrity": "sha512-t8XVUbCJByhVEa1RzO0zS2QzbL3wPY8ot1yUw9noqiSHxJWUwv6jiwm1/MZDPTYtkZH2ZHvdQIRQ5/SjG9XmLw==",
+      "dev": true,
+      "dependencies": {
+        "@11ty/dependency-tree": "^2.0.1",
+        "@11ty/eleventy-dev-server": "^1.0.4",
+        "@11ty/eleventy-utils": "^1.0.1",
+        "@11ty/lodash-custom": "^4.17.21",
+        "@iarna/toml": "^2.2.5",
+        "@sindresorhus/slugify": "^1.1.2",
+        "bcp-47-normalize": "^1.1.1",
+        "chokidar": "^3.5.3",
+        "cross-spawn": "^7.0.3",
+        "debug": "^4.3.4",
+        "dependency-graph": "^0.11.0",
+        "ejs": "^3.1.9",
+        "fast-glob": "^3.2.12",
+        "graceful-fs": "^4.2.11",
+        "gray-matter": "^4.0.3",
+        "hamljs": "^0.6.2",
+        "handlebars": "^4.7.7",
+        "is-glob": "^4.0.3",
+        "iso-639-1": "^2.1.15",
+        "kleur": "^4.1.5",
+        "liquidjs": "^10.7.0",
+        "luxon": "^3.3.0",
+        "markdown-it": "^13.0.1",
+        "micromatch": "^4.0.5",
+        "minimist": "^1.2.8",
+        "moo": "^0.5.2",
+        "multimatch": "^5.0.0",
+        "mustache": "^4.2.0",
+        "normalize-path": "^3.0.0",
+        "nunjucks": "^3.2.3",
+        "path-to-regexp": "^6.2.1",
+        "please-upgrade-node": "^3.2.0",
+        "posthtml": "^0.16.6",
+        "posthtml-urls": "^1.0.0",
+        "pug": "^3.0.2",
+        "recursive-copy": "^2.0.14",
+        "semver": "^7.3.8",
+        "slugify": "^1.6.6"
+      },
+      "bin": {
+        "eleventy": "cmd.js"
+      },
+      "engines": {
+        "node": ">=14"
+      },
+      "funding": {
+        "type": "opencollective",
+        "url": "https://opencollective.com/11ty"
+      }
+    },
+    "node_modules/@11ty/eleventy-dev-server": {
+      "version": "1.0.4",
+      "resolved": "https://registry.npmjs.org/@11ty/eleventy-dev-server/-/eleventy-dev-server-1.0.4.tgz",
+      "integrity": "sha512-qVBmV2G1KF/0o5B/3fITlrrDHy4bONUI2YuN3/WJ3BNw4NU1d/we8XhKrlgq13nNvHoBx5czYp3LZt8qRG53Fg==",
+      "dev": true,
+      "dependencies": {
+        "@11ty/eleventy-utils": "^1.0.1",
+        "chokidar": "^3.5.3",
+        "debug": "^4.3.4",
+        "dev-ip": "^1.0.1",
+        "finalhandler": "^1.2.0",
+        "mime": "^3.0.0",
+        "minimist": "^1.2.8",
+        "morphdom": "^2.7.0",
+        "please-upgrade-node": "^3.2.0",
+        "ssri": "^8.0.1",
+        "ws": "^8.13.0"
+      },
+      "bin": {
+        "eleventy-dev-server": "cmd.js"
+      },
+      "engines": {
+        "node": ">=14"
+      },
+      "funding": {
+        "type": "opencollective",
+        "url": "https://opencollective.com/11ty"
+      }
+    },
+    "node_modules/@11ty/eleventy-fetch": {
+      "version": "4.0.0",
+      "resolved": "https://registry.npmjs.org/@11ty/eleventy-fetch/-/eleventy-fetch-4.0.0.tgz",
+      "integrity": "sha512-wGAd0r+8DUWr22fK5r07dOKuNY6ltA7hX+sJzngGZL1yJmuUVdM/xPQZ+iq0BFgf/ZeRdpVEzf2D0cpVZUuiTg==",
+      "dev": true,
+      "dependencies": {
+        "debug": "^4.3.4",
+        "flat-cache": "^3.0.4",
+        "node-fetch": "^2.6.7",
+        "p-queue": "^6.6.2"
+      },
+      "engines": {
+        "node": ">=14"
+      },
+      "funding": {
+        "type": "opencollective",
+        "url": "https://opencollective.com/11ty"
+      }
+    },
+    "node_modules/@11ty/eleventy-img": {
+      "version": "3.1.8",
+      "resolved": "https://registry.npmjs.org/@11ty/eleventy-img/-/eleventy-img-3.1.8.tgz",
+      "integrity": "sha512-9xVqbykggQAHTSiZEo6nUayS8l8nkM7RU8dCjGzikCc8FXSW/E17ytq7SaDngo24D3LZdD+3Gheh4zSeidrImA==",
+      "dev": true,
+      "dependencies": {
+        "@11ty/eleventy-fetch": "^4.0.0",
+        "brotli-size": "^4.0.0",
+        "debug": "^4.3.4",
+        "entities": "^4.5.0",
+        "image-size": "^1.0.2",
+        "p-queue": "^6.6.2",
+        "sharp": "^0.32.6"
+      },
+      "engines": {
+        "node": ">=14.15.0"
+      },
+      "funding": {
+        "type": "opencollective",
+        "url": "https://opencollective.com/11ty"
+      }
+    },
+    "node_modules/@11ty/eleventy-img/node_modules/entities": {
+      "version": "4.5.0",
+      "resolved": "https://registry.npmjs.org/entities/-/entities-4.5.0.tgz",
+      "integrity": "sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw==",
+      "dev": true,
+      "engines": {
+        "node": ">=0.12"
+      },
+      "funding": {
+        "url": "https://github.com/fb55/entities?sponsor=1"
+      }
+    },
+    "node_modules/@11ty/eleventy-utils": {
+      "version": "1.0.2",
+      "resolved": "https://registry.npmjs.org/@11ty/eleventy-utils/-/eleventy-utils-1.0.2.tgz",
+      "integrity": "sha512-Zy2leMK1DQR6Q6ZPSagv7QpJaAz9uVbb+RmVetYFp3foMeQtOSZx7w2u5daRFmP+PeNq9vO9H4xtBToYFWZwHA==",
+      "dev": true,
+      "dependencies": {
+        "normalize-path": "^3.0.0"
+      },
+      "engines": {
+        "node": ">=12"
+      },
+      "funding": {
+        "type": "opencollective",
+        "url": "https://opencollective.com/11ty"
+      }
+    },
+    "node_modules/@11ty/lodash-custom": {
+      "version": "4.17.21",
+      "resolved": "https://registry.npmjs.org/@11ty/lodash-custom/-/lodash-custom-4.17.21.tgz",
+      "integrity": "sha512-Mqt6im1xpb1Ykn3nbcCovWXK3ggywRJa+IXIdoz4wIIK+cvozADH63lexcuPpGS/gJ6/m2JxyyXDyupkMr5DHw==",
+      "dev": true,
+      "engines": {
+        "node": ">=14"
+      },
+      "funding": {
+        "type": "opencollective",
+        "url": "https://opencollective.com/11ty"
+      }
+    }
+  }
+}

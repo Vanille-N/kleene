@@ -1,23 +1,48 @@
 #import "match.typ"
 
-#let inverse-reachable-set(grammar, start) = {
-  let one-step(pat) = {
+#let reachable(grammar) = {
+  let explore(pat) = {
     if "lab" in pat {
       (pat.lab,)
-    } else if "pats" in pat {
-      for pat in pat.pats {
-        one-step(pat)
-      }
     } else if "pat" in pat {
-      one-step(pat.pat)
+      explore(pat.pat)
+    } else if "pats" in pat {
+      for sub in pat.pats {
+        explore(sub)
+      }
     } else {
       ()
     }
   }
-  let step = (:)
-  for (ruleid, rule) in grammar {
-    step.insert(ruleid, one-step(rule.pat))
+  let reach = (:)
+  for (id, rule) in grammar {
+    reach.insert(id, explore(rule.pat).dedup())
   }
+  reach
+}
+
+#let reachable-closure(grammar, start) = {
+  let step = reachable(grammar)
+  let reach = start
+  while true {
+    let new = ()
+    for id in reach {
+      for next in step.at(id, default: ()) {
+        if next not in reach {
+          reach.push(next)
+          new.push(next)
+        }
+      }
+    }
+    if new == () {
+      break
+    }
+  }
+  reach
+}
+
+#let inv-reachable-closure(grammar, start) = {
+  let step = reachable(grammar)
   let reach = start
   while true {
     let new = ()
@@ -37,6 +62,20 @@
     }
   }
   reach
+}
+
+#let check-closed(
+  grammar,
+) = {
+  let all-rules = grammar.keys()
+  let all-reachable = reachable-closure(grammar, all-rules)
+  let dangling = all-reachable.filter(r => r not in all-rules)
+  let undef = all-rules.filter(r => grammar.at(r).pat == ())
+  (
+    undef: undef,
+    dangling: dangling,
+    dangerous: inv-reachable-closure(grammar, dangling + undef),
+  )
 }
 
 #let check-empty(
@@ -65,7 +104,9 @@
     }
   }
   let known-nonempty(pat, known) = {
-    if "lab" in pat {
+    if pat == () {
+      none
+    } else if "lab" in pat {
       known.at(pat.lab, default: none)
     } else if pat.call == match.regex {
       let re = std.regex(pat.arg)
@@ -84,6 +125,12 @@
         ans = _and(ans, known-nonempty(sub, known))
       }
       ans
+    } else if pat.call == match.hint {
+      let ans = true
+      for (_, sub) in pat.mapping {
+        ans = _and(ans, known-nonempty(sub, known))
+      }
+      ans
     } else if pat.call == match.seq {
       let ans = false
       for sub in pat.pats {
@@ -92,7 +139,7 @@
       ans
     } else if pat.call in (match.error,) {
       true
-    } else if pat.call in (match.rewrite, match.iter, match.drop, match.try) {
+    } else if pat.call in (match.iter, match.try) {
       known-nonempty(pat.pat, known)
     } else {
       panic(pat)
@@ -119,8 +166,10 @@
 
 #let check-leftrec(grammar, nonempty) = {
   let next-left(pat) = {
-    if "lab" in pat {
-      if nonempty.at(pat.lab) == true {
+    if pat == () {
+      ((), true)
+    } else if "lab" in pat {
+      if nonempty.at(pat.lab, default: none) == true {
         ((pat.lab,), false)
       } else {
         ((pat.lab,), true)
@@ -147,6 +196,15 @@
         after = after or go-on
       }
       (ans, after)
+    } else if pat.call == match.hint {
+      let ans = ()
+      let after = true
+      for (_, sub) in pat.mapping {
+        let (also, go-on) = next-left(sub)
+        ans += also
+        after = after or go-on
+      }
+      (ans, after)
     } else if pat.call == match.seq {
       let ans = ()
       for sub in pat.pats {
@@ -164,7 +222,7 @@
       (ans, true)
     } else if pat.call in (match.eof,) {
       ((), false)
-    } else if pat.call in (match.rewrite, match.iter, match.drop, match.try, match.error) {
+    } else if pat.call in (match.iter, match.try, match.error) {
       next-left(pat.pat)
     } else {
       panic(pat)
@@ -190,7 +248,7 @@
         cycles.push(c)
       } else if c.last() in c.slice(0, -1) {
       } else {
-        for nx in next.at(c.last()) {
+        for nx in next.at(c.last(), default: ()) {
           new.push((..c, nx))
         }
       }
@@ -202,7 +260,7 @@
   }
   (
     cycles: cycles,
-    dangerous: inverse-reachable-set(grammar, cycles.flatten()),
+    dangerous: inv-reachable-closure(grammar, cycles.flatten()),
   )
 }
 

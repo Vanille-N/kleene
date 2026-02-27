@@ -1,5 +1,16 @@
 #import "stackframe.typ"
 
+#let apply-rw(fun, data) = {
+  if "val" in data {
+    if fun == none {
+      let _ = data.remove("val")
+    } else {
+      data.val = fun(data.val)
+    }
+  }
+  data
+}
+
 #let commit() = (subparse, input) => {
   (ok: true, backtrack: false, next: none, rest: input)
 }
@@ -15,7 +26,7 @@
 #let regex(
   arg: auto,
 ) = {
-  let re = std.regex("^" + arg)
+  let re = std.regex("^(" + arg + ")")
   (subparse, input) => {
     let match = input.find(re)
     if match != none {
@@ -173,7 +184,7 @@
         }
       )
     } else {
-      env.latest-msg.msg = [#env.latest-msg.msg]
+      //env.latest-msg.msg = [#env.latest-msg.msg]
       env.latest-msg
     }
   }
@@ -207,33 +218,6 @@
   stackframe.pause(subparse)(pat, input)()(
     ans => {
       (: ..ans, backtrack: true)
-    }
-  )
-}
-
-#let drop(
-  pat: auto,
-) = (subparse, input) => {
-  stackframe.pause(subparse)(pat, input)()(
-    ans => {
-      if "val" in ans {
-        let _ = ans.remove("val")
-      }
-      ans
-    }
-  )
-}
-
-#let rewrite(
-  fun: auto,
-  pat: auto,
-) = (subparse, input) => {
-  stackframe.pause(subparse)(pat, input)()(
-    ans => {
-      if "val" in ans {
-        ans.val = fun(ans.val)
-      }
-      ans
     }
   )
 }
@@ -279,5 +263,23 @@
       }
     }
   )
+}
+
+#let hint(
+  len: auto,
+  mapping: auto,
+) = (subparse, input) => {
+  let key = if input.len() >= len {
+    input.slice(0, len)
+  } else {
+    "__"
+  }
+  if key in mapping {
+    stackframe.tailcall(subparse)(mapping.at(key), input)
+  } else if "__" in mapping {
+    stackframe.tailcall(subparse)(mapping.__, input)
+  } else {
+    (ok: false, backtrack: true, msg: [Recognized none of the hinted prefixes], rest: input)
+  }
 }
 
